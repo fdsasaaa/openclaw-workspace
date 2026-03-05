@@ -48,16 +48,43 @@ foreach($t in $tasks){
     $resultFile = "C:\OpenClaw_Workspace\agents\$agent\memory\logs\$taskId-result.json"
     $notifFile  = "C:\OpenClaw_Workspace\bindings\notifications\$taskId.json"
     
-    if ((Test-Path $resultFile) -and (Test-Path $notifFile)) {
+    if (Test-Path $notifFile) {
       try {
-        $resultJson = Get-Content $resultFile -Raw -Encoding UTF8 | ConvertFrom-Json
-        $notifJson  = Get-Content $notifFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        $notifJson = Get-Content $notifFile -Raw -Encoding UTF8 | ConvertFrom-Json
         
-        # 合并结果字段
-        $notifJson | Add-Member -NotePropertyName "result" -NotePropertyValue $resultJson.result -Force
-        $notifJson | Add-Member -NotePropertyName "status" -NotePropertyValue $resultJson.status -Force
-        $notifJson | Add-Member -NotePropertyName "completedAt" -NotePropertyValue $resultJson.completedAt -Force
-        $notifJson | Add-Member -NotePropertyName "summary_detail" -NotePropertyValue $resultJson.result -Force
+        # 准备 fallback 值
+        $fallbackResult = "(result file missing)"
+        $fallbackStatus = "unknown"
+        $fallbackCompletedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        $errorDetail = $null
+        
+        if (Test-Path $resultFile) {
+          try {
+            $resultJson = Get-Content $resultFile -Raw -Encoding UTF8 | ConvertFrom-Json
+            $fallbackResult = $resultJson.result
+            $fallbackStatus = $resultJson.status
+            $fallbackCompletedAt = $resultJson.completedAt
+            Write-Host ("[queue-runner] FOUND result file for taskId={0}" -f $taskId)
+          }
+          catch {
+            $errorDetail = "Failed to parse result file: $_"
+            Write-Host ("[queue-runner] WARN: Failed to parse result file for taskId={0}: {1}" -f $taskId, $_)
+          }
+        } else {
+          $errorDetail = "Result file not found at expected path: $resultFile"
+          Write-Host ("[queue-runner] WARN: Result file missing for taskId={0}, using fallback" -f $taskId)
+        }
+        
+        # 合并结果字段（确保不为空）
+        $notifJson | Add-Member -NotePropertyName "result" -NotePropertyValue ($fallbackResult, "(no result)" -ne $null)[0] -Force
+        $notifJson | Add-Member -NotePropertyName "status" -NotePropertyValue ($fallbackStatus, "unknown" -ne $null)[0] -Force
+        $notifJson | Add-Member -NotePropertyName "completedAt" -NotePropertyValue $fallbackCompletedAt -Force
+        $notifJson | Add-Member -NotePropertyName "summary_detail" -NotePropertyValue ($fallbackResult, "(no summary)" -ne $null)[0] -Force
+        
+        # 如有错误，添加 error_detail
+        if ($errorDetail) {
+          $notifJson | Add-Member -NotePropertyName "error_detail" -NotePropertyValue $errorDetail -Force
+        }
         
         # 写回通知文件
         $notifJson | ConvertTo-Json -Depth 3 | Set-Content $notifFile -Encoding UTF8
@@ -66,6 +93,8 @@ foreach($t in $tasks){
       catch {
         Write-Host ("[queue-runner] WARN: Failed to enrich notification for taskId={0}: {1}" -f $taskId, $_.Exception.Message)
       }
+    } else {
+      Write-Host ("[queue-runner] WARN: Notification file not found for taskId={0}" -f $taskId)
     }
   }
   catch{
