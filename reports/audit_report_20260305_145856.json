@@ -1,0 +1,272 @@
+{
+  "audit_time": "2026-03-05T14:58:56.646903",
+  "base_path": "C:\\OpenClaw_Workspace",
+  "summary": {
+    "total": 43,
+    "ok": 43,
+    "warning": 0,
+    "error": 0
+  },
+  "results": [
+    {
+      "status": "OK",
+      "item": "文件: reports/stage1_environment_path_report.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\stage1_environment_path_report.md)",
+      "timestamp": "2026-03-05T14:58:54.931241"
+    },
+    {
+      "status": "OK",
+      "item": "文件: reports/pre_business_checklist.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\pre_business_checklist.md)",
+      "timestamp": "2026-03-05T14:58:54.931241"
+    },
+    {
+      "status": "OK",
+      "item": "文件: reports/stage1_final_selfcheck_report.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\stage1_final_selfcheck_report.md)",
+      "timestamp": "2026-03-05T14:58:54.931241"
+    },
+    {
+      "status": "OK",
+      "item": "文件: Data/market_data.csv",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\Data\\market_data.csv)",
+      "timestamp": "2026-03-05T14:58:54.931241"
+    },
+    {
+      "status": "OK",
+      "item": "文件大小: Data/market_data.csv",
+      "detail": "487513 bytes (要求≥100000)",
+      "timestamp": "2026-03-05T14:58:54.931241"
+    },
+    {
+      "status": "OK",
+      "item": "文件: step02/01-ea-optimize.ps1",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\step02\\01-ea-optimize.ps1)",
+      "timestamp": "2026-03-05T14:58:54.931755"
+    },
+    {
+      "status": "OK",
+      "item": "文件: reports/stage2_core_capability_report.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\stage2_core_capability_report.md)",
+      "timestamp": "2026-03-05T14:58:54.931755"
+    },
+    {
+      "status": "OK",
+      "item": "文件: configs/execution-rules.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\configs\\execution-rules.md)",
+      "timestamp": "2026-03-05T14:58:54.931755"
+    },
+    {
+      "status": "OK",
+      "item": "文件: configs/security-reminder.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\configs\\security-reminder.md)",
+      "timestamp": "2026-03-05T14:58:54.931755"
+    },
+    {
+      "status": "OK",
+      "item": "文件: configs/memory-spec.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\configs\\memory-spec.md)",
+      "timestamp": "2026-03-05T14:58:54.931755"
+    },
+    {
+      "status": "OK",
+      "item": "文件: configs/backup-strategy.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\configs\\backup-strategy.md)",
+      "timestamp": "2026-03-05T14:58:54.931755"
+    },
+    {
+      "status": "OK",
+      "item": "文件大小: configs/execution-rules.md",
+      "detail": "3720 bytes (要求≥1000)",
+      "timestamp": "2026-03-05T14:58:54.931755"
+    },
+    {
+      "status": "OK",
+      "item": "文件大小: configs/security-reminder.md",
+      "detail": "4273 bytes (要求≥1000)",
+      "timestamp": "2026-03-05T14:58:54.931755"
+    },
+    {
+      "status": "OK",
+      "item": "文件大小: configs/memory-spec.md",
+      "detail": "5180 bytes (要求≥1000)",
+      "timestamp": "2026-03-05T14:58:54.932292"
+    },
+    {
+      "status": "OK",
+      "item": "文件大小: configs/backup-strategy.md",
+      "detail": "4334 bytes (要求≥1000)",
+      "timestamp": "2026-03-05T14:58:54.932292"
+    },
+    {
+      "status": "OK",
+      "item": "文件: reports/stage4_execution_efficiency_report.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\stage4_execution_efficiency_report.md)",
+      "timestamp": "2026-03-05T14:58:54.932292"
+    },
+    {
+      "status": "OK",
+      "item": "Python依赖: pandas",
+      "detail": "版本 3.0.0",
+      "timestamp": "2026-03-05T14:58:56.274578"
+    },
+    {
+      "status": "OK",
+      "item": "Python依赖: backtrader",
+      "detail": "版本 1.9.78.123",
+      "timestamp": "2026-03-05T14:58:56.639585"
+    },
+    {
+      "status": "OK",
+      "item": "文件: reports/stage5_multi_agent_plan.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\stage5_multi_agent_plan.md)",
+      "timestamp": "2026-03-05T14:58:56.640111"
+    },
+    {
+      "status": "OK",
+      "item": "文件: reports/stage6-10_evaluation_plan.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\stage6-10_evaluation_plan.md)",
+      "timestamp": "2026-03-05T14:58:56.640111"
+    },
+    {
+      "status": "OK",
+      "item": "文件: reports/FINAL_stage6-10_implementation_summary.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\FINAL_stage6-10_implementation_summary.md)",
+      "timestamp": "2026-03-05T14:58:56.640111"
+    },
+    {
+      "status": "OK",
+      "item": "文件: memory/evolution-stage6.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\memory\\evolution-stage6.md)",
+      "timestamp": "2026-03-05T14:58:56.640111"
+    },
+    {
+      "status": "OK",
+      "item": "文件: memory/evolution-stage8.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\memory\\evolution-stage8.md)",
+      "timestamp": "2026-03-05T14:58:56.640111"
+    },
+    {
+      "status": "OK",
+      "item": "文件: memory/mt4-cli-verification.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\memory\\mt4-cli-verification.md)",
+      "timestamp": "2026-03-05T14:58:56.640111"
+    },
+    {
+      "status": "OK",
+      "item": "文件: templates/ea-prompt-gold-intraday.txt",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\templates\\ea-prompt-gold-intraday.txt)",
+      "timestamp": "2026-03-05T14:58:56.640640"
+    },
+    {
+      "status": "OK",
+      "item": "文件: ea-backtests/test_strategy.py",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\ea-backtests\\test_strategy.py)",
+      "timestamp": "2026-03-05T14:58:56.640640"
+    },
+    {
+      "status": "OK",
+      "item": "目录: backup",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.640640"
+    },
+    {
+      "status": "OK",
+      "item": "目录: cache",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.640640"
+    },
+    {
+      "status": "OK",
+      "item": "目录: configs",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.640640"
+    },
+    {
+      "status": "OK",
+      "item": "目录: Data",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.641170"
+    },
+    {
+      "status": "OK",
+      "item": "目录: ea-backtests",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.641170"
+    },
+    {
+      "status": "OK",
+      "item": "目录: ea-reports",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.641170"
+    },
+    {
+      "status": "OK",
+      "item": "目录: ea-scripts",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.641776"
+    },
+    {
+      "status": "OK",
+      "item": "目录: logs",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.641776"
+    },
+    {
+      "status": "OK",
+      "item": "目录: memory",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.641776"
+    },
+    {
+      "status": "OK",
+      "item": "目录: projects",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.641776"
+    },
+    {
+      "status": "OK",
+      "item": "目录: reports",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.642278"
+    },
+    {
+      "status": "OK",
+      "item": "目录: skills",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.642278"
+    },
+    {
+      "status": "OK",
+      "item": "目录: step02",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.642278"
+    },
+    {
+      "status": "OK",
+      "item": "目录: temp",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.642278"
+    },
+    {
+      "status": "OK",
+      "item": "目录: templates",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.642278"
+    },
+    {
+      "status": "OK",
+      "item": "目录: workspace",
+      "detail": "存在",
+      "timestamp": "2026-03-05T14:58:56.642278"
+    },
+    {
+      "status": "OK",
+      "item": "文件: reports/FINAL_1-5_stages_summary.md",
+      "detail": "存在 (C:\\OpenClaw_Workspace\\reports\\FINAL_1-5_stages_summary.md)",
+      "timestamp": "2026-03-05T14:58:56.642278"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}
