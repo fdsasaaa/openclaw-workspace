@@ -1,0 +1,70 @@
+{
+  "version": "1.0",
+  "description": "EnergyBlock SubAgent Bindings路由规则",
+  "rules": [
+    {
+      "id": "backtest-task",
+      "name": "回测任务路由",
+      "pattern": "回测|优化|测试策略|参数调整|performance|backtest",
+      "target": "strategy-researcher",
+      "priority": 10,
+      "trigger": "auto"
+    },
+    {
+      "id": "code-analysis",
+      "name": "代码分析任务",
+      "pattern": "分析代码|检查EA|代码审查|bug|optimize code",
+      "target": "strategy-researcher",
+      "priority": 9,
+      "trigger": "auto"
+    },
+    {
+      "id": "data-analysis",
+      "name": "数据分析任务",
+      "pattern": "分析数据|历史数据|统计|data analysis|csv",
+      "target": "data-analyst",
+      "priority": 8,
+      "trigger": "auto"
+    },
+    {
+      "id": "content-creation",
+      "name": "内容生成任务",
+      "pattern": "生成文案|写博客|制作视频脚本|营销内容|youtube",
+      "target": "content-generator",
+      "priority": 7,
+      "trigger": "auto"
+    },
+    {
+      "id": "default",
+      "name": "默认路由",
+      "pattern": ".*",
+      "target": "main",
+      "priority": 1,
+      "trigger": "fallback"
+    }
+  ],
+  "agents": {
+    "main": {
+      "path": "C:\\OpenClaw_Workspace",
+      "description": "主中枢Agent"
+    },
+    "strategy-researcher": {
+      "path": "C:\\OpenClaw_Workspace\\agents\\strategy-researcher",
+      "description": "策略研发SubAgent",
+      "max_runtime": "30m",
+      "notify_on_complete": true
+    },
+    "data-analyst": {
+      "path": "C:\\OpenClaw_Workspace\\agents\\data-analyst",
+      "description": "数据分析SubAgent",
+      "max_runtime": "20m",
+      "notify_on_complete": true
+    },
+    "content-generator": {
+      "path": "C:\\OpenClaw_Workspace\\agents\\content-generator",
+      "description": "内容生成SubAgent",
+      "max_runtime": "15m",
+      "notify_on_complete": true
+    }
+  }
+}
