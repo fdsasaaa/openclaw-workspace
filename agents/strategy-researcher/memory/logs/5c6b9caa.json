@@ -1,0 +1,8 @@
+﻿{
+    "status":  "running",
+    "agent":  "strategy-researcher",
+    "workspace":  "C:\\OpenClaw_Workspace\\agents\\strategy-researcher",
+    "startedAt":  null,
+    "taskId":  "5c6b9caa",
+    "task":  "验收：请输出一句话：SubAgent runner 已正常执行并回传通知。"
+}

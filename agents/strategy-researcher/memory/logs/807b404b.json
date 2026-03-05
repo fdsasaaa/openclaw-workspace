@@ -1,0 +1,8 @@
+﻿{
+    "status":  "running",
+    "agent":  "strategy-researcher",
+    "workspace":  "C:\\OpenClaw_Workspace\\agents\\strategy-researcher",
+    "startedAt":  null,
+    "taskId":  "807b404b",
+    "task":  "守护验收：请回测EA并给一句话结论（后台队列自动处理测试）。"
+}

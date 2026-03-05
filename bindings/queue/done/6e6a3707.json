@@ -1,0 +1,9 @@
+{
+  "taskId": "6e6a3707",
+  "prompt": "验收队列：请进行EA回测优化，并给出一句话结论。",
+  "target": "main",
+  "routed": false,
+  "rule": "fallback",
+  "status": "queued",
+  "createdAt": "2026-03-06 07:05:38"
+}

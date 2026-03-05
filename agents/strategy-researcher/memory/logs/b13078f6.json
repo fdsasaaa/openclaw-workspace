@@ -1,0 +1,8 @@
+﻿{
+    "status":  "running",
+    "agent":  "strategy-researcher",
+    "workspace":  "C:\\OpenClaw_Workspace\\agents\\strategy-researcher",
+    "startedAt":  null,
+    "taskId":  "b13078f6",
+    "task":  "请回测EA并给一句话结论"
+}

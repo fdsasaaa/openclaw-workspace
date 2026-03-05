@@ -1,7 +1,5 @@
-#!/usr/bin/env pwsh
-# SubAgent任务执行器
-# 用于后台运行SubAgent任务，不阻塞主会话
-
+﻿#!/usr/bin/env pwsh
+# SubAgent浠诲姟鎵ц鍣?# 鐢ㄤ簬鍚庡彴杩愯SubAgent浠诲姟锛屼笉闃诲涓讳細璇?
 param(
     [Parameter(Mandatory=$true)]
     [string]$AgentName,
@@ -17,14 +15,13 @@ $ErrorActionPreference = "Stop"
 $WorkDir = "C:\OpenClaw_Workspace\agents\$AgentName"
 $LogDir = "$WorkDir\memory\logs"
 
-# 确保目录存在
+# 纭繚鐩綍瀛樺湪
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 
-# 记录任务开始
-$startTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+# 璁板綍浠诲姟寮€濮?$startTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 "[$startTime] Task $TaskId started: $Task" | Out-File "$LogDir\$TaskId.log" -Append
 
-# 创建任务文件
+# 鍒涘缓浠诲姟鏂囦欢
 $taskFile = @{
     taskId = $TaskId
     agent = $AgentName
@@ -37,17 +34,16 @@ $taskFile = @{
 $taskFile | Out-File "$LogDir\$TaskId.json" -Encoding UTF8
 
 try {
-    # 切换到SubAgent工作目录
+    # 鍒囨崲鍒癝ubAgent宸ヤ綔鐩綍
     Set-Location $WorkDir
     
-    # 这里模拟SubAgent处理
-    # 实际应调用OpenClaw API或启动新进程
+    # 杩欓噷妯℃嫙SubAgent澶勭悊
+    # 瀹為檯搴旇皟鐢∣penClaw API鎴栧惎鍔ㄦ柊杩涚▼
     "Processing..." | Out-File "$LogDir\$TaskId.log" -Append
     
-    # 模拟长时间任务
-    # Start-Sleep -Seconds 5
+    # 妯℃嫙闀挎椂闂翠换鍔?    # Start-Sleep -Seconds 5
     
-    # 任务完成
+    # 浠诲姟瀹屾垚
     $endTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $result = @{
         taskId = $TaskId
@@ -59,12 +55,12 @@ try {
     $result | Out-File "$LogDir\$TaskId-result.json" -Encoding UTF8
     "[$endTime] Task $TaskId completed" | Out-File "$LogDir\$TaskId.log" -Append
     
-    # 通知主Agent（通过文件触发器或消息）
+    # Notify main agent (via file trigger)
     $notification = @{
         type = "task_complete"
         taskId = $TaskId
         agent = $AgentName
-        summary = "任务 $TaskId 已完成"
+        summary = "Task $TaskId completed"
         timestamp = $endTime
     } | ConvertTo-Json
     
