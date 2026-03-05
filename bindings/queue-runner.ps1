@@ -43,6 +43,30 @@ foreach($t in $tasks){
     $dest = Join-Path $DoneDir $t.Name
     Move-Item -Force $t.FullName $dest
     Write-Host ("[queue-runner] DONE taskId={0} -> {1}" -f $taskId,$dest)
+
+    # 【优化B】合并结果摘要到通知
+    $resultFile = "C:\OpenClaw_Workspace\agents\$agent\memory\logs\$taskId-result.json"
+    $notifFile  = "C:\OpenClaw_Workspace\bindings\notifications\$taskId.json"
+    
+    if ((Test-Path $resultFile) -and (Test-Path $notifFile)) {
+      try {
+        $resultJson = Get-Content $resultFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        $notifJson  = Get-Content $notifFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        
+        # 合并结果字段
+        $notifJson | Add-Member -NotePropertyName "result" -NotePropertyValue $resultJson.result -Force
+        $notifJson | Add-Member -NotePropertyName "status" -NotePropertyValue $resultJson.status -Force
+        $notifJson | Add-Member -NotePropertyName "completedAt" -NotePropertyValue $resultJson.completedAt -Force
+        $notifJson | Add-Member -NotePropertyName "summary_detail" -NotePropertyValue $resultJson.result -Force
+        
+        # 写回通知文件
+        $notifJson | ConvertTo-Json -Depth 3 | Set-Content $notifFile -Encoding UTF8
+        Write-Host ("[queue-runner] ENRICHED notification with result for taskId={0}" -f $taskId)
+      }
+      catch {
+        Write-Host ("[queue-runner] WARN: Failed to enrich notification for taskId={0}: {1}" -f $taskId, $_.Exception.Message)
+      }
+    }
   }
   catch{
     $msg = $_.Exception.Message
