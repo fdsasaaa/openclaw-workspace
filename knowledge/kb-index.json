@@ -1,0 +1,34 @@
+{
+  "version": "1.0",
+  "last_update": "2026-03-05T18:51:39.103197",
+  "documents": [
+    {
+      "id": "mt5-docs/mql5-quickref.md",
+      "category": "mt5-docs",
+      "filename": "mql5-quickref.md",
+      "path": "C:\\OpenClaw_Workspace\\knowledge\\mt5-docs\\mql5-quickref.md",
+      "added_at": "2026-03-05T18:51:39.101064"
+    },
+    {
+      "id": "pine-script/pine-basics.md",
+      "category": "pine-script",
+      "filename": "pine-basics.md",
+      "path": "C:\\OpenClaw_Workspace\\knowledge\\pine-script\\pine-basics.md",
+      "added_at": "2026-03-05T18:51:39.101064"
+    },
+    {
+      "id": "ea-templates/box-strategy-guide.md",
+      "category": "ea-templates",
+      "filename": "box-strategy-guide.md",
+      "path": "C:\\OpenClaw_Workspace\\knowledge\\ea-templates\\box-strategy-guide.md",
+      "added_at": "2026-03-05T18:51:39.102486"
+    },
+    {
+      "id": "trading-rules/risk-management.md",
+      "category": "trading-rules",
+      "filename": "risk-management.md",
+      "path": "C:\\OpenClaw_Workspace\\knowledge\\trading-rules\\risk-management.md",
+      "added_at": "2026-03-05T18:51:39.103197"
+    }
+  ]
+}
