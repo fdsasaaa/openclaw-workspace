@@ -52,6 +52,87 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 - `trash` > `rm` (recoverable beats gone forever)
 - When in doubt, ask.
 
+## 🚨 High-Risk Operations - System Configuration Changes
+
+**核心原则：永远不要锯掉自己坐的树枝**
+
+AI 最容易犯的错误：修改自己赖以通信的配置，导致系统失联。
+
+### 高风险操作清单
+
+以下操作可能导致 OpenClaw 失联，**必须遵守保护流程**：
+
+**配置修改：**
+- 修改 `~/.openclaw/openclaw.json`
+- 修改 channel 配置（Telegram/Discord/飞书等）
+- 修改代理设置
+- 启用/禁用插件
+- 修改模型配置
+- 任何需要 `openclaw gateway restart` 的操作
+
+**系统级操作：**
+- 更新 OpenClaw 版本
+- 修改网络配置
+- 修改防火墙规则
+
+### 强制保护流程（三步走）
+
+**在执行任何高风险操作前：**
+
+1. **📦 Git Commit（必须）**
+   ```bash
+   cd C:\OpenClaw_Workspace\workspace
+   git add -A
+   git commit -m "配置修改前备份 - [描述修改内容]"
+   ```
+
+2. **👤 告知用户（必须）**
+   - 明确说明即将修改什么
+   - 说明需要重启网关
+   - 等待用户确认
+   - **示例：** "我即将修改 openclaw.json 启用 acpx 插件，需要重启网关。这可能导致短暂失联（1-2分钟）。是否继续？"
+
+3. **✅ 修改后立即验证（必须）**
+   - 执行修改
+   - 重启网关
+   - 等待 30 秒
+   - 发送测试消息确认连接
+   - 如果失联，用户可以手动回滚：`git checkout .`
+
+### 低风险操作（无需特殊保护）
+
+以下操作安全，可以直接执行：
+- 读取文件
+- 写入工作区文件
+- 执行 PowerShell 脚本（不涉及系统配置）
+- 查询数据
+- 生成报告
+
+### 紧急恢复（给用户）
+
+**如果 AI 失联了：**
+
+```powershell
+# 方法1：Git 回滚
+cd C:\OpenClaw_Workspace\workspace
+git checkout .
+openclaw gateway restart
+
+# 方法2：手动恢复配置
+cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
+openclaw gateway restart
+```
+
+### 记住
+
+**检查不能代替保护。**
+
+模拟环境 ≠ 真实环境。唯一可靠的方法是：
+- 承认错误一定会发生
+- 确保能够快速恢复
+
+**回滚是保险丝，Git 是黑匣子。**
+
 ## External vs Internal
 
 **Safe to do freely:**
