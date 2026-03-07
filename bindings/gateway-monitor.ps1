@@ -52,8 +52,9 @@ function Start-Gateway {
     try {
         Write-Log "[ACTION] 正在启动网关..."
         
-        # 使用 openclaw gateway start
-        $result = & openclaw gateway start 2>&1
+        # 使用完整路径启动网关（SYSTEM 账户没有 PATH）
+        $openclawPath = "C:\Users\ME\AppData\Roaming\npm\openclaw.ps1"
+        $result = & pwsh.exe -File $openclawPath gateway start 2>&1
         
         # 等待启动
         Start-Sleep -Seconds 10
