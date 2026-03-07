@@ -1,0 +1,8 @@
+﻿{
+    "status":  "running",
+    "agent":  "data-analyst",
+    "workspace":  "C:\\OpenClaw_Workspace\\agents\\data-analyst",
+    "startedAt":  null,
+    "taskId":  "50cf6ac2",
+    "task":  "\"分析历史数据\""
+}

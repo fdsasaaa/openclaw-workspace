@@ -1,0 +1,107 @@
+﻿param(
+  [Parameter(Mandatory=$false)]
+  [string]$QueueDir = "C:\OpenClaw_Workspace\bindings\queue",
+  [Parameter(Mandatory=$false)]
+  [string]$DoneDir  = "C:\OpenClaw_Workspace\bindings\queue\done",
+  [Parameter(Mandatory=$false)]
+  [string]$FailDir  = "C:\OpenClaw_Workspace\bindings\queue\failed",
+  [Parameter(Mandatory=$false)]
+  [string]$Runner   = "C:\OpenClaw_Workspace\bindings\subagent-runner.ps1"
+)
+
+$ErrorActionPreference = "Stop"
+New-Item -ItemType Directory -Force -Path $QueueDir,$DoneDir,$FailDir | Out-Null
+
+$tasks = Get-ChildItem $QueueDir -File -Filter "*.json" -ErrorAction SilentlyContinue |
+         Where-Object { $_.FullName -notmatch "\\(done|failed)\\" } |
+         Sort-Object LastWriteTime
+
+if(-not $tasks){
+  Write-Host "[queue-runner] No tasks in queue."
+  exit 0
+}
+
+foreach($t in $tasks){
+  try{
+    $raw = Get-Content $t.FullName -Raw -Encoding UTF8
+    $job = $raw | ConvertFrom-Json
+
+    $taskId = [string]$job.taskId
+    $agent  = [string]$job.target
+    $prompt = [string]$job.prompt
+
+    if([string]::IsNullOrWhiteSpace($taskId) -or [string]::IsNullOrWhiteSpace($agent) -or [string]::IsNullOrWhiteSpace($prompt)){
+      throw "Invalid task json fields (taskId/target/prompt required)."
+    }
+
+    Write-Host ("[queue-runner] RUN taskId={0} target={1}" -f $taskId,$agent)
+
+    # 调用单任务执行器（你已验收通过）
+    powershell -ExecutionPolicy Bypass -File $Runner -AgentName $agent -Task $prompt -TaskId $taskId
+
+    # 成功：移入 done
+    $dest = Join-Path $DoneDir $t.Name
+    Move-Item -Force $t.FullName $dest
+    Write-Host ("[queue-runner] DONE taskId={0} -> {1}" -f $taskId,$dest)
+
+    # 【优化B】合并结果摘要到通知
+    $resultFile = "C:\OpenClaw_Workspace\agents\$agent\memory\logs\$taskId-result.json"
+    $notifFile  = "C:\OpenClaw_Workspace\bindings\notifications\$taskId.json"
+    
+    if (Test-Path $notifFile) {
+      try {
+        $notifJson = Get-Content $notifFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        
+        # 准备 fallback 值
+        $fallbackResult = "(result file missing)"
+        $fallbackStatus = "unknown"
+        $fallbackCompletedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        $errorDetail = $null
+        
+        if (Test-Path $resultFile) {
+          try {
+            $resultJson = Get-Content $resultFile -Raw -Encoding UTF8 | ConvertFrom-Json
+            $fallbackResult = $resultJson.result
+            $fallbackStatus = $resultJson.status
+            $fallbackCompletedAt = $resultJson.completedAt
+            Write-Host ("[queue-runner] FOUND result file for taskId={0}" -f $taskId)
+          }
+          catch {
+            $errorDetail = "Failed to parse result file: $_"
+            Write-Host ("[queue-runner] WARN: Failed to parse result file for taskId={0}: {1}" -f $taskId, $_)
+          }
+        } else {
+          $errorDetail = "Result file not found at expected path: $resultFile"
+          Write-Host ("[queue-runner] WARN: Result file missing for taskId={0}, using fallback" -f $taskId)
+        }
+        
+        # 合并结果字段（确保不为空）
+        $notifJson | Add-Member -NotePropertyName "result" -NotePropertyValue ($fallbackResult, "(no result)" -ne $null)[0] -Force
+        $notifJson | Add-Member -NotePropertyName "status" -NotePropertyValue ($fallbackStatus, "unknown" -ne $null)[0] -Force
+        $notifJson | Add-Member -NotePropertyName "completedAt" -NotePropertyValue $fallbackCompletedAt -Force
+        $notifJson | Add-Member -NotePropertyName "summary_detail" -NotePropertyValue ($fallbackResult, "(no summary)" -ne $null)[0] -Force
+        
+        # 如有错误，添加 error_detail
+        if ($errorDetail) {
+          $notifJson | Add-Member -NotePropertyName "error_detail" -NotePropertyValue $errorDetail -Force
+        }
+        
+        # 写回通知文件
+        $notifJson | ConvertTo-Json -Depth 3 | Set-Content $notifFile -Encoding UTF8
+        Write-Host ("[queue-runner] ENRICHED notification with result for taskId={0}" -f $taskId)
+      }
+      catch {
+        Write-Host ("[queue-runner] WARN: Failed to enrich notification for taskId={0}: {1}" -f $taskId, $_.Exception.Message)
+      }
+    } else {
+      Write-Host ("[queue-runner] WARN: Notification file not found for taskId={0}" -f $taskId)
+    }
+  }
+  catch{
+    $msg = $_.Exception.Message
+    Write-Host ("[queue-runner] FAIL file={0} err={1}" -f $t.FullName,$msg)`n    try { Set-Content -Path ($t.FullName + ".err.txt") -Value $msg -Encoding UTF8 } catch {}
+    $dest = Join-Path $FailDir $t.Name
+    Move-Item -Force $t.FullName $dest -ErrorAction SilentlyContinue
+  }
+}
+

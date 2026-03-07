@@ -1,0 +1,9 @@
+{
+  "taskId": "30311568",
+  "prompt": "验收队列：请回测这个EA策略，并做参数优化，输出一句话结论。",
+  "target": "strategy-researcher",
+  "routed": true,
+  "rule": "回测任务路由",
+  "status": "queued",
+  "createdAt": "2026-03-06 07:06:36"
+}

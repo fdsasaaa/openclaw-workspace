@@ -1,0 +1,9 @@
+{
+  "taskId": "807b404b",
+  "prompt": "守护验收：请回测EA并给一句话结论（后台队列自动处理测试）。",
+  "target": "strategy-researcher",
+  "routed": true,
+  "rule": "回测任务路由",
+  "status": "queued",
+  "createdAt": "2026-03-06 07:12:41"
+}
