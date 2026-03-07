@@ -1,0 +1,72 @@
+# 配音脚本 - 第一个视频
+
+## 开场（0:00-0:30）
+
+What's up, traders! 
+You're about to see something incredible.
+My semi-automated box strategy just completed Day 1,
+and the results... are amazing.
+Let's dive in!
+
+## 今日概览（0:30-2:30）
+
+Today was an incredible day in the markets.
+My strategy identified 5 high-probability setups.
+Out of these 5 trades, 4 were winners and 1 was a loser,
+giving us a win rate of 80%.
+The total profit for today is 250 dollars.
+Now let me show you exactly how it happened.
+
+## 策略简介（2:30-4:30）
+
+For those new to the channel, here's how the box strategy works.
+The strategy identifies consolidation zones, or 'boxes',
+where price is ranging between support and resistance.
+When price breaks out with strong momentum,
+that's our entry signal.
+It's semi-automated: I draw the boxes manually,
+but the EA handles everything else.
+This gives us the best of both worlds.
+
+## 交易1分析（4:30-6:30）
+
+Let's start with Trade Number 1.
+This was on EURUSD on the H1 timeframe.
+I spotted a perfect box formation between 1.38 and 1.40.
+Price broke above the box at 1.39, and I entered long.
+My stop loss was at 1.385, take profit at 1.395.
+The trade went perfectly.
+Price hit my take profit in just 75 minutes,
+for a profit of 50 pips, which is 125 dollars.
+This is exactly what we're looking for.
+
+## 交易2-4快速展示（6:30-9:30）
+
+Trade 2 was on GBPUSD, another winner, plus 75 dollars.
+Trade 3 on USDCHF, this one hit my stop loss, minus 50 dollars.
+Not every trade is a winner, and that's okay.
+Trade 4 on XAUUSD, big winner, plus 100 dollars.
+So out of 4 trades, 3 winners, 1 loser.
+That's a 75% win rate, and we're up 250 dollars for the day.
+
+## EA设置展示（9:30-11:00）
+
+Now, let me show you the EA settings.
+Base risk is 1%, very conservative.
+ATR stop loss multiplier is 2.0 for dynamic stops.
+Maximum martingale is 2, for controlled risk.
+These settings have been optimized over months of testing.
+If you want to use this strategy yourself,
+check out the links in the description.
+
+## 结尾CTA（11:00-12:00）
+
+So that's Day 1! 250 dollars profit, 80% win rate.
+If you want to use this strategy,
+I have two options:
+TradingView signals for real-time alerts,
+or the semi-automated EA for MT5.
+Both links are in the description.
+Don't forget to subscribe, hit the like button,
+and leave a comment.
+See you tomorrow with Day 2 results!
