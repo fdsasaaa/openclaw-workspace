@@ -1,0 +1,27 @@
+{
+  "protocolVersion": "1.1",
+  "taskType": "diagnose",
+  "changeScope": "none",
+  "taskId": "T-20260307-TEST",
+  "description": "测试诊断任务 - 验证协议 v1.1",
+  "target": {
+    "path": "C:\\OpenClaw_Workspace\\workspace",
+    "type": "directory"
+  },
+  "constraints": {
+    "strict": true,
+    "allowSystemOperations": false,
+    "maxOutputLines": 50
+  },
+  "timestamp": "2026-03-07T07:08:00Z",
+  "protocol": {
+    "type": "diagnose",
+    "mode": "strict",
+    "autoExecute": false,
+    "requireApproval": true
+  },
+  "payload": {
+    "test": true,
+    "verifyProtocol": "v1.1"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "taskId": "verify-phase2-001",
+  "handler": "claude",
+  "type": "diagnose",
+  "prompt": "请分析 C:\\OpenClaw_Workspace\\workspace 目录结构，列出所有脚本文件及其功能",
+  "protocol": {
+    "type": "diagnose",
+    "mode": "strict",
+    "autoExecute": false,
+    "requireApproval": true
+  },
+  "payload": {
+    "targetPath": "C:\\OpenClaw_Workspace\\workspace",
+    "analysisType": "structure"
+  },
+  "constraints": {
+    "timeoutSec": 120,
+    "changeScope": "none",
+    "maxOutputLines": 100
+  },
+  "status": "pending",
+  "createdAt": "2026-03-07T10:38:00Z",
+  "createdBy": "openclaw-verification"
+}

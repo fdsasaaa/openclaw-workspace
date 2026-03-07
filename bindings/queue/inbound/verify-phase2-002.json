@@ -1,0 +1,24 @@
+{
+  "taskId": "verify-phase2-002",
+  "handler": "claude",
+  "type": "diagnose",
+  "prompt": "Analyze the directory structure of C:\\OpenClaw_Workspace\\workspace and list all script files with their functions",
+  "protocol": {
+    "type": "diagnose",
+    "mode": "strict",
+    "autoExecute": false,
+    "requireApproval": true
+  },
+  "payload": {
+    "targetPath": "C:\\OpenClaw_Workspace\\workspace",
+    "analysisType": "structure"
+  },
+  "constraints": {
+    "timeoutSec": 120,
+    "changeScope": "none",
+    "maxOutputLines": 100
+  },
+  "status": "pending",
+  "createdAt": "2026-03-07T10:39:00Z",
+  "createdBy": "openclaw-verification"
+}

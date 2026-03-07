@@ -1,0 +1,23 @@
+{
+  "taskId": "test-auto-final",
+  "handler": "claude",
+  "type": "verify",
+  "prompt": "Supervisor auto-trigger test SUCCESS!",
+  "protocol": {
+    "type": "diagnose",
+    "mode": "strict",
+    "autoExecute": false,
+    "requireApproval": true
+  },
+  "payload": {
+    "test": "final-supervisor-test",
+    "timestamp": "2026-03-07T10:27:00Z"
+  },
+  "constraints": {
+    "timeoutSec": 60,
+    "changeScope": "none"
+  },
+  "status": "pending",
+  "createdAt": "2026-03-07T10:27:00Z",
+  "createdBy": "openclaw"
+}

@@ -1,0 +1,36 @@
+﻿{
+    "output":  {
+                   "confidence":  0.85,
+                   "verdict":  "proposal",
+                   "riskLevel":  "low",
+                   "outbound":  null,
+                   "nextAction":  "await_decision",
+                   "proposal":  {
+                                    "summary":  "Test task for Claude Code Protocol v1.1",
+                                    "recommendations":  [
+                                                            "Check code quality",
+                                                            "Optimize performance",
+                                                            "Add tests"
+                                                        ],
+                                    "requiresApproval":  true,
+                                    "estimatedTime":  "30 minutes"
+                                }
+               },
+    "timestamp":  "2026-03-07T10:28:59",
+    "meta":  {
+                 "processedBy":  "claude-code-v1.1",
+                 "strictMode":  true,
+                 "processingTimeMs":  1200
+             },
+    "input":  {
+                  "test":  "final-supervisor-test",
+                  "timestamp":  "2026-03-07T10:27:00Z"
+              },
+    "taskId":  "test-auto-final",
+    "protocol":  {
+                     "type":  "diagnose",
+                     "mode":  "strict",
+                     "autoExecute":  false,
+                     "requireApproval":  true
+                 }
+}

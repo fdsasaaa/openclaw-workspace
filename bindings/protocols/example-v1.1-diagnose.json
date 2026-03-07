@@ -1,0 +1,20 @@
+{
+  "protocolVersion": "1.1",
+  "taskType": "diagnose",
+  "changeScope": "none",
+  "taskId": "T-20260307-TEST",
+  "description": "测试诊断任务",
+  "target": {
+    "path": "C:\\OpenClaw_Workspace\\workspace",
+    "type": "directory"
+  },
+  "constraints": {
+    "strict": true,
+    "allowSystemOperations": false,
+    "maxOutputLines": 50
+  },
+  "expectedOutput": {
+    "format": "json",
+    "fields": ["verdict", "nextAction", "riskLevel", "confidence", "proposal"]
+  }
+}

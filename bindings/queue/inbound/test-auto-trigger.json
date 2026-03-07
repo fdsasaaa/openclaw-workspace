@@ -1,0 +1,14 @@
+{
+  "taskId": "test-auto-trigger",
+  "handler": "claude",
+  "type": "verify",
+  "prompt": "这是一个自动触发测试。请回复：'自动触发成功，当前时间为[当前时间]'",
+  "constraints": {
+    "timeoutSec": 60,
+    "changeScope": "none",
+    "expansionPolicy": "strict"
+  },
+  "status": "pending",
+  "createdAt": "2026-03-07T10:16:00Z",
+  "createdBy": "openclaw"
+}

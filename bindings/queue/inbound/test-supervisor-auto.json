@@ -1,0 +1,23 @@
+{
+  "taskId": "test-supervisor-auto",
+  "handler": "claude",
+  "type": "verify",
+  "prompt": "Supervisor自动触发测试成功！当前时间：2026-03-07 10:24",
+  "protocol": {
+    "type": "diagnose",
+    "mode": "strict",
+    "autoExecute": false,
+    "requireApproval": true
+  },
+  "payload": {
+    "test": "supervisor-trigger"
+  },
+  "constraints": {
+    "timeoutSec": 60,
+    "changeScope": "none",
+    "expansionPolicy": "strict"
+  },
+  "status": "pending",
+  "createdAt": "2026-03-07T10:24:00Z",
+  "createdBy": "openclaw"
+}

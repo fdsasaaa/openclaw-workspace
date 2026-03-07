@@ -1,0 +1,33 @@
+# OpenClaw Workspace .gitignore
+
+# 日志文件
+*.log
+bindings/logs/
+bindings/notifications/
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~
+
+# 敏感配置（如果有）
+.env
+secrets/
+
+# OpenClaw 运行时文件
+.openclaw/workspace-state.json
+.clawhub/lock.json
+
+# Node modules（如果有）
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
