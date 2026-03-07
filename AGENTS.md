@@ -236,6 +236,79 @@ Skills provide your tools. When you need one, check its `SKILL.md`. Keep local n
 - **Discord links:** Wrap multiple links in `<>` to suppress embeds: `<https://example.com>`
 - **WhatsApp:** No headers — use **bold** or CAPS for emphasis
 
+---
+
+## 🛠️ Skills 自动使用规则
+
+**目标：让 skills 成为下意识反应，不需要思考就能用上**
+
+### YouTube 相关 Skills（2026-03-07 安装）
+
+**遇到以下情况，立即使用对应 skill：**
+
+1. **看到 YouTube 链接** → 使用 `summarize`
+   ```bash
+   summarize "https://youtu.be/VIDEO_ID" --youtube auto
+   ```
+   - 用途：快速分析视频内容
+   - 何时用：竹林发来 YouTube 链接，或需要分析竞品视频
+
+2. **需要视频字幕/转录** → 使用 `youtube-watcher`
+   ```bash
+   python3 skills/youtube-watcher/scripts/get_transcript.py "VIDEO_URL"
+   ```
+   - 用途：提取视频文字内容
+   - 何时用：需要详细分析视频讲解内容
+
+3. **需要为视频生成字幕** → 使用 `video-subtitles`
+   ```bash
+   ./skills/video-subtitles/scripts/generate_srt.py video.mp4 --srt --burn
+   ```
+   - 用途：为我们的视频生成英文字幕
+   - 何时用：视频制作的最后阶段
+
+4. **需要提取视频画面** → 使用 `video-frames`
+   ```bash
+   skills/video-frames/scripts/frame.sh video.mp4 --time 00:00:10 --out frame.jpg
+   ```
+   - 用途：提取关键帧进行分析
+   - 何时用：需要看清视频中的某个画面
+
+### 触发词识别
+
+**当用户说以下词语时，自动联想到对应 skill：**
+
+| 用户说的话 | 立即想到的 Skill | 行动 |
+|-----------|----------------|------|
+| "分析这个视频" | summarize | 直接调用 summarize |
+| "这个 YouTube 视频讲了什么" | summarize | 直接调用 summarize |
+| "提取视频字幕" | youtube-watcher | 调用 get_transcript.py |
+| "生成字幕" | video-subtitles | 调用 generate_srt.py |
+| "看看这一帧" | video-frames | 调用 frame.sh |
+| "截取视频画面" | video-frames | 调用 frame.sh |
+
+### 习惯养成检查清单
+
+**每次遇到以下情况，问自己：**
+
+- ✅ 看到 YouTube 链接了吗？ → 用 summarize
+- ✅ 需要分析视频内容吗？ → 用 summarize 或 youtube-watcher
+- ✅ 需要为视频加字幕吗？ → 用 video-subtitles
+- ✅ 需要看清某个画面吗？ → 用 video-frames
+
+### 记住
+
+**Skills 是你的手，不是工具箱里的工具。**
+
+- 不要想"我有哪些 skills"
+- 要想"遇到这个任务，我的手会自然做什么"
+- 看到 YouTube 链接 = 手自动伸向 summarize
+- 需要字幕 = 手自动伸向 video-subtitles
+
+**目标：1-2周后形成条件反射。**
+
+---
+
 ## 💓 Heartbeats - Be Proactive!
 
 When you receive a heartbeat poll (message matches the configured heartbeat prompt), don't just reply `HEARTBEAT_OK` every time. Use heartbeats productively!
