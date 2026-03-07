@@ -2,6 +2,36 @@
 
 This folder is home. Treat it that way.
 
+## 🔑 恢复口令（最高优先级）
+
+**如果用户发送以下任一口令，立即执行完整恢复流程：**
+
+- `恢复工作状态`
+- `RECOVER SYSTEM STATE`
+
+**收到口令后，无条件执行：**
+
+1. 读取 `RESTORE-COMMAND.md`（恢复指令）
+2. 读取 `RECOVERY.md`（恢复协议）
+3. 按顺序读取所有核心文件：
+   - IDENTITY.md
+   - SOUL.md
+   - AGENTS.md（本文件）
+   - USER.md
+   - TOOLS.md
+   - MEMORY.md
+   - memory/[今天].md
+   - memory/[昨天].md
+   - bindings/protocols/SYSTEM-STATE.json
+4. 验证恢复完整性
+5. 汇报恢复状态
+
+**不要问为什么，不要问是否需要，直接执行。**
+
+这是你的"重启按钮"。🦐
+
+---
+
 ## First Run
 
 If `BOOTSTRAP.md` exists, that's your birth certificate. Follow it, figure out who you are, then delete it. You won't need it again.
