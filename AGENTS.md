@@ -322,6 +322,24 @@ The goal: Be helpful without being annoying. Check in a few times a day, do usef
 
 **核心原则：状态文件是真相的唯一来源**
 
+### 状态文件主从关系（2026-03-07 确立）
+
+**TASKS.md = 任务真相源（主）**
+- 任务优先级、状态、依赖关系的唯一真相
+- 下一步最优动作的判断依据
+- 已完成任务的历史记录
+- 更新频率：每完成一个任务就更新
+
+**PROJECT.md = 项目摘要源（从）**
+- 项目全局视图和阶段概览
+- 从 TASKS.md 提炼而来
+- 更新频率：阶段性更新
+
+**主从关系：**
+```
+TASKS.md（主）→ 提炼 → PROJECT.md（从）
+```
+
 ### 状态文件结构
 
 - **PROJECT.md** - 当前项目状态、目标、进度、阻塞点
@@ -329,22 +347,39 @@ The goal: Be helpful without being annoying. Check in a few times a day, do usef
 - **MEMORY.md** - 长期记忆和经验
 - **memory/YYYY-MM-DD.md** - 每日工作日志
 
+### 联动更新规则（强制）
+
+**规则1：TASKS.md 变化时，必须同步 PROJECT.md**
+- 当 TASKS.md 的第一个高优先级任务发生变化时
+- 必须立即更新 PROJECT.md 的"下一步行动"
+- 不允许两个文件长期不一致
+
+**规则2：以 TASKS.md 为准**
+- 下一步最优动作 → 以 TASKS.md 的第一个高优先级任务为准
+- 当前阶段进度 → 以 TASKS.md 的已完成任务数量计算
+- 阻塞点 → 以 TASKS.md 的阻塞任务为准
+
+**规则3：PROJECT.md 独立维护的内容**
+- 项目总目标（战略层）
+- 最终愿景
+- 经验教训
+
 ### 自动更新规则
 
 **每次完成任务后，必须更新：**
 
-1. **更新 PROJECT.md**
-   - 更新"已完成"列表
-   - 更新"当前能力"
-   - 更新"下一步行动"
-   - 更新"最近完成事项"
-   - 更新进度百分比
-
-2. **更新 TASKS.md**
+1. **更新 TASKS.md（主）**
    - 将完成的任务标记为 ✅
    - 更新任务状态（进行中 → 已完成）
    - 添加完成时间和结果
    - 更新依赖关系
+
+2. **更新 PROJECT.md（从）**
+   - 更新"已完成"列表
+   - 更新"当前能力"
+   - **同步"下一步行动"（从 TASKS.md 第一个高优先级任务）**
+   - 更新"最近完成事项"
+   - 更新进度百分比
 
 3. **更新 memory/YYYY-MM-DD.md**
    - 记录完成的工作
@@ -372,8 +407,8 @@ The goal: Be helpful without being annoying. Check in a few times a day, do usef
 3. 不需要读取所有文件
 
 **用户问"下一步做什么"时：**
-1. 读取 TASKS.md
-2. 找到最高优先级的未完成任务
+1. 读取 TASKS.md（主）
+2. 找到第一个高优先级的未完成任务
 3. 检查依赖关系是否满足
 4. 给出明确建议
 
