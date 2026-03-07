@@ -318,6 +318,65 @@ Think of it like a human reviewing their journal and updating their mental model
 
 The goal: Be helpful without being annoying. Check in a few times a day, do useful background work, but respect quiet time.
 
+## 📋 项目状态管理 - 自动更新机制
+
+**核心原则：状态文件是真相的唯一来源**
+
+### 状态文件结构
+
+- **PROJECT.md** - 当前项目状态、目标、进度、阻塞点
+- **TASKS.md** - 任务清单、优先级、依赖关系
+- **MEMORY.md** - 长期记忆和经验
+- **memory/YYYY-MM-DD.md** - 每日工作日志
+
+### 自动更新规则
+
+**每次完成任务后，必须更新：**
+
+1. **更新 PROJECT.md**
+   - 更新"已完成"列表
+   - 更新"当前能力"
+   - 更新"下一步行动"
+   - 更新"最近完成事项"
+   - 更新进度百分比
+
+2. **更新 TASKS.md**
+   - 将完成的任务标记为 ✅
+   - 更新任务状态（进行中 → 已完成）
+   - 添加完成时间和结果
+   - 更新依赖关系
+
+3. **更新 memory/YYYY-MM-DD.md**
+   - 记录完成的工作
+   - 记录遇到的问题和解决方案
+   - 记录经验教训
+
+**每天结束时（或每日报告前），必须：**
+
+1. 回顾今天的 memory/YYYY-MM-DD.md
+2. 提炼重要经验到 MEMORY.md
+3. 更新 PROJECT.md 的进度
+4. 规划明天的优先任务
+
+**触发时机：**
+- 完成任何任务后
+- 每日工作报告前（19:00）
+- 用户询问"当前状态"时
+- 用户询问"下一步做什么"时
+
+### 状态查询快捷方式
+
+**用户问"当前状态"时：**
+1. 读取 PROJECT.md
+2. 总结当前进度、下一步、阻塞点
+3. 不需要读取所有文件
+
+**用户问"下一步做什么"时：**
+1. 读取 TASKS.md
+2. 找到最高优先级的未完成任务
+3. 检查依赖关系是否满足
+4. 给出明确建议
+
 ## Make It Yours
 
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.
