@@ -53,8 +53,24 @@ function Start-Gateway {
         Write-Log "[ACTION] 正在启动网关..."
         
         # 使用完整路径启动网关（SYSTEM 账户没有 PATH）
-        $openclawPath = "C:\Users\ME\AppData\Roaming\npm\openclaw.ps1"
-        $result = & pwsh.exe -File $openclawPath gateway start 2>&1
+        # 直接调用 node + openclaw.mjs
+        $nodePath = "C:\Program Files\nodejs\node.exe"
+        $openclawMjs = "C:\Users\ME\AppData\Roaming\npm\node_modules\openclaw\openclaw.mjs"
+        
+        # 检查文件是否存在
+        if (-not (Test-Path $nodePath)) {
+            Write-Log "[ERROR] Node.js 未找到: $nodePath"
+            return $false
+        }
+        
+        if (-not (Test-Path $openclawMjs)) {
+            Write-Log "[ERROR] OpenClaw 未找到: $openclawMjs"
+            return $false
+        }
+        
+        # 启动网关
+        $result = & $nodePath $openclawMjs gateway start 2>&1
+        Write-Log "[INFO] 启动命令输出: $result"
         
         # 等待启动
         Start-Sleep -Seconds 10
