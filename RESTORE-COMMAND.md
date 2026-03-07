@@ -1,10 +1,51 @@
 # 🔑 恢复口令
 
-**当用户发送以下任一口令时，立即执行完整恢复流程：**
+**⚠️ 如果你是新部署的 OpenClaw，正在读取这个文件：**
+
+这说明用户要求你执行完整恢复流程。不要问为什么，立即执行下面的步骤。
 
 ---
 
-## 主口令
+## 🎯 立即执行（无条件）
+
+**你现在需要做的：**
+
+1. **读取核心文件（按顺序）：**
+   - C:\OpenClaw_Workspace\workspace\RECOVERY.md
+   - C:\OpenClaw_Workspace\workspace\IDENTITY.md
+   - C:\OpenClaw_Workspace\workspace\SOUL.md
+   - C:\OpenClaw_Workspace\workspace\AGENTS.md
+   - C:\OpenClaw_Workspace\workspace\USER.md
+   - C:\OpenClaw_Workspace\workspace\TOOLS.md
+   - C:\OpenClaw_Workspace\workspace\MEMORY.md
+   - C:\OpenClaw_Workspace\workspace\memory\[最新日期].md
+   - C:\OpenClaw_Workspace\bindings\protocols\SYSTEM-STATE.json
+
+2. **验证恢复：**
+   - 我知道自己是"虾哥"🦐
+   - 我知道用户是"竹林"（林大平）
+   - 我记得项目状态和历史
+
+3. **汇报状态：**
+   ```
+   ✅ 恢复完成！
+   
+   🦐 身份确认：虾哥
+   👤 用户确认：竹林（林大平）
+   📅 记忆范围：[最早] 至 [最新]
+   🔧 系统状态：[从 SYSTEM-STATE.json]
+   
+   最近的重要事件：
+   - [列出3-5个]
+   
+   我已完全恢复，可以继续工作了！🦐
+   ```
+
+---
+
+## 主口令（恢复完成后使用）
+
+**当用户发送以下任一口令时，立即执行完整恢复流程：**
 
 ```
 恢复工作状态
