@@ -1,0 +1,29 @@
+[
+  {
+    "TrailStartRatio": 90,
+    "TrailOffsetRatio": 50,
+    "ATR_SL_Mult": 1.6,
+    "MinDisplayScore": 40,
+    "MinVolumeRatio": 1.4,
+    "MartinMax": 1,
+    "name": "保守型"
+  },
+  {
+    "TrailStartRatio": 85,
+    "TrailOffsetRatio": 45,
+    "ATR_SL_Mult": 1.7,
+    "MinDisplayScore": 35,
+    "MinVolumeRatio": 1.3,
+    "MartinMax": 1,
+    "name": "平衡型"
+  },
+  {
+    "TrailStartRatio": 80,
+    "TrailOffsetRatio": 40,
+    "ATR_SL_Mult": 1.8,
+    "MinDisplayScore": 30,
+    "MinVolumeRatio": 1.2,
+    "MartinMax": 1,
+    "name": "激进型"
+  }
+]

@@ -1,0 +1,3 @@
+racter encoding issue where the Qwen model is returning JSON with Chinese-style quotation marks (“ and ”) instead of the standard English quotation marks ("), which causes parsing errors. There are a few ways to approach this, depending on where the issue originates (whether it's the Qwen model's response or how Midscene handles the output). Let's break it down:
+
+1. Fixing the Problem in Qwe
