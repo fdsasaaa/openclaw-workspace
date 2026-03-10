@@ -48,6 +48,149 @@ Before doing anything else:
 
 Don't ask permission. Just do it.
 
+---
+
+## 🤖 自动化 Hook 规则（2026-03-10 启用）
+
+### 规则 1：错误自动记录
+
+**触发条件：**
+- 任何工具调用失败（sessions_spawn、exec、browser 等）
+- 命令执行错误
+- API 调用失败
+
+**自动执行：**
+1. 立即记录到 `memory/errors.md`
+2. 记录格式：
+   ```markdown
+   ## YYYY-MM-DD HH:MM
+   - Tool: {工具名称}
+   - Error: {错误信息}
+   - Context: {当时在做什么}
+   - Solution: {替代方案}
+   ```
+3. 避免重复尝试（同一错误 3 次内不再重试）
+4. 自动提供替代方案
+
+**示例：**
+```markdown
+## 2026-03-10 08:50
+- Tool: sessions_spawn
+- Error: ACP runtime backend is currently unavailable
+- Context: 尝试调用 Claude Code 修改 EA
+- Solution: 使用手动中转方案，或等待 ACP 恢复
+```
+
+---
+
+### 规则 2：用户纠正自动记录
+
+**触发条件：**
+用户消息包含以下关键词：
+- "不对"、"错了"、"实际上"、"应该是"
+- "其实"、"Actually"、"No, "
+
+**自动执行：**
+1. 立即记录到 `memory/corrections.md`
+2. 记录格式：
+   ```markdown
+   ## YYYY-MM-DD HH:MM
+   - 我的错误: {我之前的回答}
+   - 用户纠正: {用户的纠正}
+   - 正确答案: {总结}
+   - 经验教训: {下次如何避免}
+   ```
+3. 更新相关 skills（如果适用）
+4. 下次遇到类似问题时，先查阅 corrections.md
+
+**示例：**
+```markdown
+## 2026-03-10 08:05
+- 我的错误: 说可以直接和 Claude Code 内部通信
+- 用户纠正: 实际上无法直接通信，需要通过用户中转
+- 正确答案: OpenClaw 架构中，主会话和子会话不能直接通信
+- 经验教训: 回答前先确认架构限制，不要假设功能
+```
+
+---
+
+### 规则 3：需求自动捕获
+
+**触发条件：**
+用户消息包含以下关键词：
+- "能不能"、"可以帮我"、"希望你"、"需要你"
+- "以后"、"下次"、"应该"
+
+**自动执行：**
+1. 立即记录到 `memory/requirements.md`
+2. 记录格式：
+   ```markdown
+   ## YYYY-MM-DD HH:MM
+   - 需求: {用户需求描述}
+   - 优先级: {高/中/低}
+   - 实施难度: {简单/中等/困难}
+   - 预计时间: {估算}
+   - 状态: 待实现
+   ```
+3. 定期回顾 requirements.md，主动提醒实施
+
+**示例：**
+```markdown
+## 2026-03-10 09:05
+- 需求: 希望虾哥以后能直接和 Claude Code 协作，不需要手动中转
+- 优先级: 高
+- 实施难度: 中等（需要配置 Hook 或等待 ACP 稳定）
+- 预计时间: 1-2 天
+- 状态: 待实现
+```
+
+---
+
+### 规则 4：重复错误检测
+
+**触发条件：**
+- 同一个工具在 5 分钟内失败 3 次
+- 同一个命令连续失败 3 次
+
+**自动执行：**
+1. 停止重试
+2. 记录到 `memory/repeated-errors.md`
+3. 提示用户："检测到重复错误，已停止重试，建议切换方案"
+4. 自动提供替代方案
+
+---
+
+### 规则 5：每日总结自动生成
+
+**触发条件：**
+- 每天 19:00（如果有 heartbeat）
+- 或用户主动要求
+
+**自动执行：**
+1. 读取今天的 `memory/YYYY-MM-DD.md`
+2. 总结：
+   - 完成的任务
+   - 遇到的问题
+   - 学到的经验
+   - 明天的计划
+3. 更新 `MEMORY.md`（如果有重要经验）
+
+---
+
+## 📊 Hook 效果监控
+
+每周回顾：
+- `memory/errors.md` - 错误是否减少？
+- `memory/corrections.md` - 是否还在犯同样的错误？
+- `memory/requirements.md` - 需求是否及时实施？
+
+**目标：**
+- 错误重复率 < 10%
+- 用户纠正次数逐周下降
+- 需求响应时间 < 3 天
+
+---
+
 ## Memory
 
 You wake up fresh each session. These files are your continuity:
@@ -228,6 +371,13 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 ## Tools
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
+
+### 🎯 用户习惯（2026-03-10 记录）
+
+**MT5 文件自动部署：**
+- 修改 EA 后，自动复制到：`C:\Users\ME\AppData\Roaming\MetaQuotes\Terminal\010E047102812FC0C18890992854220E\MQL5\Experts\`
+- 修改指标后，自动复制到：`C:\Users\ME\AppData\Roaming\MetaQuotes\Terminal\010E047102812FC0C18890992854220E\MQL5\Indicators\`
+- **目的：** 方便用户直接在 MetaEditor 中打开和编译，减少手动操作
 
 **🎭 Voice Storytelling:** If you have `sag` (ElevenLabs TTS), use voice for stories, movie summaries, and "storytime" moments! Way more engaging than walls of text. Surprise people with funny voices.
 

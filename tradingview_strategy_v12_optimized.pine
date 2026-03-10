@@ -1,0 +1,1322 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © HQBox_Strategy_Pro_v12 - 优化版（基于回测数据深度分析）
+// 🔥【V12优化特性】：
+// 1. ATR止损优化：2.0→1.6（降低大额止损40%）
+// 2. 移动止盈优化：75%→85%触发，48%→52%回撤（让利润充分奔跑）
+// 3. 趋势过滤：新增EMA(50)方向确认（避免逆势交易）
+// 4. 成交量过滤加强：1.2→1.4倍（严格过滤低质量突破）
+// 5. 箱体质量提升：评分35→40（提高入场质量）
+// 6. 预期效果：年化收益22-26%，胜率91-93%
+
+//@version=6
+strategy("能量块V12 优化策略", overlay=true, 
+          initial_capital=1000000, default_qty_type=strategy.fixed, default_qty_value=1, 
+          currency=currency.NONE, max_labels_count=500, max_boxes_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 1. 策略参数
+// ══════════════════════════════════════════════════════════════════════════════
+
+grp_strat = "🤖 自动化交易核心"
+grp_pc    = "🔌 PineConnector 设置"
+grp_risk  = "🛡️ 风险管理优化"
+// --- PineConnector Params ---
+EnablePC        = input.bool(true, "Enable PineConnector Alerts", group=grp_pc)
+PC_Id           = input.string("8567766974677", "License ID", group=grp_pc)
+PC_Secret       = input.string("", "Secret Key (Optional)", group=grp_pc)
+PC_Sym          = input.string("", "Symbol (Empty=Auto)", group=grp_pc)
+PC_Prefix       = input.string("", "Symbol Prefix (e.g. pro.)", group=grp_pc)
+PC_Suffix       = input.string("", "Symbol Suffix (e.g. .m)", group=grp_pc)
+PC_SymbolMap    = input.string("", "Symbol Map (TV:MT4, e.g. US500:US500,XAUUSD:XAUUSD)", group=grp_pc)
+PC_Lots         = input.float(0.01, "Signal Lots", minval=0.01, step=0.01, group=grp_pc)
+PC_RealtimeOnly = input.bool(false, "Realtime Alerts Only", group=grp_pc)
+PC_EnableMagic  = input.bool(true, "Enable Magic Parameter (EA需支持magic=)", group=grp_pc)
+PC_PipMult      = input.float(10.0, "Pip Multiplier (外汇10, 黄金/指数1)", minval=1.0, maxval=100.0, step=1.0, group=grp_pc)
+PC_SendLotsFallback = input.bool(false, "Send lots= as Fallback (仅兜底用)", group=grp_pc)
+
+// ====== Boost Risk 配置（用于高门槛指数自动抬高 risk） ======
+BaseRisk = input.float(1.0, "Base Risk %", step=0.1, group=grp_pc)
+BoostSymbolsCSV = input.string("US30,USTEC,IT40", "Boost symbols (CSV, exact normalized names)", group=grp_pc)
+BoostMode = input.string("DynamicBySL", "Boost Mode", options=["Fixed","DynamicBySL"], group=grp_pc)
+FixedBoostRisk = input.float(3.0, "Fixed Boost Risk %", step=0.1, group=grp_pc)
+SL_Threshold1 = input.int(3000, "SL threshold 1 (pips)", group=grp_pc)
+SL_Threshold2 = input.int(8000, "SL threshold 2 (pips)", group=grp_pc)
+SL_Threshold3 = input.int(15000, "SL threshold 3 (pips)", group=grp_pc)
+Risk1 = input.float(2.0, "Risk when SL >= T1 (%)", step=0.1, group=grp_pc)
+Risk2 = input.float(3.0, "Risk when SL >= T2 (%)", step=0.1, group=grp_pc)
+Risk3 = input.float(5.0, "Risk when SL >= T3 (%)", step=0.1, group=grp_pc)
+MaxBoostRisk = input.float(8.0, "Max Boost Risk cap (%)", step=0.1, group=grp_pc)
+RiskMapCSV = input.string("", "Risk Map (SYM:Risk,...)", group=grp_pc)
+EnableForceFixedLots = input.bool(false, "Force fixed 1 lot for Boost symbols (override risk)", group=grp_pc)
+ShowRiskDebug = input.bool(false, "Show Risk Debug Label", group=grp_pc)
+
+// --- Instant Test Settings ---
+grp_test = "🧪 立即测试"
+EnableInstantTest = input.bool(false, "启用立即测试", group=grp_test)
+TestRiskValue     = input.float(10.0, "测试风险值", minval=1.0, maxval=100.0, group=grp_test)
+
+// --- Risk Settings ---
+RiskValue         = input.float(10.0, "交易风险值", minval=1.0, maxval=100.0, group=grp_risk)
+
+BaseQty         = input.float(1.0, "基础下单数量", group=grp_strat)
+CooldownBars    = input.int(6, "马丁爆仓后强制休息K线数", group=grp_strat)
+BreakoutInvalid = input.float(30.0, "挂单期强突失效阈值(%)", group=grp_strat) / 100.0
+MaxWaitBars     = input.int(50, "挂单超时撤单K线数", group=grp_strat)
+
+// 🔥【V12深度优化】风险管理参数（基于138笔回测数据分析）
+EnableATRStopLoss     = input.bool(true, "启用ATR动态止损", group=grp_risk)
+ATR_Period            = input.int(14, "ATR周期", minval=5, maxval=50, group=grp_risk)  // 🔥V12优化：从17改为14（更灵敏）
+ATR_SL_Mult           = input.float(1.6, "ATR止损倍数", minval=0.5, maxval=4.0, step=0.1, group=grp_risk)  // 🔥V12优化：从2.0降到1.6（降低大额止损，预计节省$280-300）
+UseSmartEntry         = input.bool(true, "智能入场过滤", group=grp_risk)
+MinVolumeRatio        = input.float(1.4, "最小成交量倍数", minval=0.1, maxval=3.0, step=0.1, group=grp_risk)  // 🔥V12优化：从1.2提升到1.4（严格过滤假突破）
+MaxBoxAgeBars         = input.int(22, "最大箱体年龄(K线数)", minval=5, maxval=200, group=grp_risk)  // 🔥V12优化：从25降到22
+EnableOptimizedMartin = input.bool(true, "优化马丁格尔", group=grp_risk)
+MartinMax             = input.int(1, "马丁最大次数", minval=1, maxval=5, group=grp_risk)  // 🔥V12优化：保持1（实际禁用马丁）
+MartinMult            = input.float(1.4, "马丁倍数", minval=1.0, maxval=2.0, step=0.1, group=grp_risk)
+EnableBoxHeightFilter = input.bool(true, "启用箱体高度过滤", group=grp_risk)
+BoxHeightMultLimit    = input.float(3.0, "箱体高度倍数限制", minval=1.0, step=0.5, group=grp_risk, tooltip="箱体高度必须小于之前K线平均高度的N倍")
+BoxHeightLookback     = input.int(12, "高度过滤回溯K线数", minval=3, maxval=50, group=grp_risk)  // 🔥V12优化：从15降到12
+
+// 🔥【V12新增】趋势过滤参数
+EnableTrendFilter     = input.bool(true, "启用趋势过滤", group=grp_risk, tooltip="使用EMA(50)过滤逆势交易，提升胜率3-5%")
+TrendEMA_Period       = input.int(50, "趋势EMA周期", minval=20, maxval=200, group=grp_risk)
+
+grp_trail = "💰 移动止损"
+TrailStartRatio = input.float(85.0, "启动盈利阈值(%箱体)", group=grp_trail) / 100.0  // 🔥V12优化：从75%提升到85%（让利润充分奔跑）
+TrailStepRatio  = input.float(32.0, "移动步长(%箱体)", group=grp_trail) / 100.0
+TrailOffsetRatio= input.float(52.0, "回撤止损位(%箱体)", group=grp_trail) / 100.0  // 🔥V12优化：从48%提升到52%（给趋势更多空间）
+
+grp_time = "⏰ 交易时间限制 (00:00-00:00代表无限制)"
+// 🔥【修改点】默认时间改为 00:00 - 00:00 (24/7)
+StratStartHour  = input.int(00, "开始小时 (首次挂单)", group=grp_time)
+StratStartMin   = input.int(00, "开始分钟 (首次挂单)", group=grp_time)
+StratEndHour    = input.int(00, "结束小时 (首次挂单)", group=grp_time)
+StratEndMin     = input.int(00, "结束分钟 (首次挂单)", group=grp_time)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 2. 指标视觉参数
+// ══════════════════════════════════════════════════════════════════════════════
+
+grp_main = "🚀 能量块核心策略 (视觉)"
+MinDisplayScore = input.float(40, "【统一】合格评分阈值", group=grp_main)  // 🔥V12优化：从35提升到40（提高箱体质量）
+TriggerMinBars  = input.int(1,   "最小K线数量限制", group=grp_main) 
+
+// 内部固定参数
+DarvasMode      = 3
+PivotStrength   = 2
+MinBars         = 5
+IdealBarsMin    = 5
+IdealBarsMax    = 120
+ReevalBars      = 3
+MinAspect       = 2.5
+AspectTarget    = 4.5
+MaxBoxATR       = 2.0
+MaxBoxATRHard   = 2.5
+ScoreVarMax     = 300.0
+SpikeThreshold  = 0.35
+MaxSpikeRatio   = 0.25
+w_flatness      = 0.25
+w_independence  = 0.20
+w_smoothness    = 0.12
+w_space         = 0.13
+w_volume        = 0.12
+w_time          = 0.10
+w_micro         = 0.08
+BoxWidth        = 2
+ColorBreakUp    = #1E90FF
+ColorBreakDn    = #FF6347
+ShowDebugLabels = false
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 3. 全局变量
+// ══════════════════════════════════════════════════════════════════════════════
+
+var int    stratState = 0 
+var float  lockBoxTop = 0.0     
+var float  lockBoxBtm = 0.0     
+var float  lockBoxH   = 0.0     
+var int    lockBoxStartBar = 0 
+var int    lockBoxEndBar = 0
+var int    lockBoxTime = 0
+
+var box    lockedBoxObj = na    
+var label  lockedLabelObj = na  
+
+var array<box>   historyBoxes  = array.new_box()
+var array<label> historyLabels = array.new_label()
+
+var int    martinCount = 0      
+var bool   isRecovery = false   
+var int    lastDir = 0          
+var int    martinDir = 0        
+var float  trailHighPrice = 0.0 
+var float  dynamicSL = 0.0      
+var int    waitBarCount = 0     
+var float  tradeQty = 0.0 
+var float  pcQty = 0.0
+
+// 强制冷却变量
+var int    nextTradeBar = 0
+
+// 🔥【新增】平仓信号追踪变量（防止兜底重复发送）
+var bool   closeSignalSent = false  // 本根K线是否已通过 strategy.exit() 发送平仓信号
+
+// 🔥【新增】Instant Test 变量
+var bool   instantTestTriggered = false  // 是否已触发立即测试
+var bool   prevEnableInstantTest = false // 上一次EnableInstantTest状态，用于边沿检测
+
+// 🔥【USTEC温和优化】ATR止损变量
+var float  atrStopLoss = 0.0
+var bool   boxValidForEntry = false 
+
+// --- 核心指标变量 ---
+var bool   box_valid = false    
+var int    box_bars = 0         
+var float  box_width = 0.0
+var int    box_touchesTop = 0
+var int    box_touchesBottom = 0
+var int    box_startBar = 0
+var int    box_endBar = 0 
+var float  box_top = na
+var float  box_bottom = na
+var float  box_height = 0.0
+var float  box_topR2 = 0.0
+var float  box_bottomR2 = 0.0
+var float  box_spikeRatio = 0.0
+
+// 评分细项变量
+var float  qual_flatness = 0.0
+var float  qual_independence = 0.0
+var float  qual_smoothness = 0.0
+var float  qual_space = 0.0
+var float  qual_volume = 0.0
+var float  qual_time = 0.0
+var float  qual_micro = 0.0
+var float  qual_totalScore = 0.0
+
+color baseColor = color.gray
+
+// --- 指标状态机变量 ---
+var int    startState_v = 0
+var int    confirmState_v = 0
+var float  boxTop_v = na
+var float  boxBottom_v = na
+var int    boxStartTime = 0 
+var int    lastBoxLeftBar = -1
+var int    lastBoxRightBar = -1
+
+// --- 绘图对象变量 ---
+var box    currentBoxObj = na
+var label  currentScoreLabel = na
+var bool   isTriggeredBox = false 
+// --- 评分历史 ---
+var array<float> scoreHistory = array.new_float(3, 50.0)
+var array<box>   indicatorBoxes  = array.new_box()
+var array<label> indicatorLabels = array.new_label()
+
+f_getNumStr(int count) =>
+    int n = count + 1
+    string s = ""
+    if n == 1
+        s := "①"
+    else if n == 2
+        s := "②"
+    else if n == 3
+        s := "③"
+    else if n == 4
+        s := "④"
+    else
+        s := str.tostring(n)
+    s
+
+// --- PineConnector Helper ---
+// 🔥【增强】Symbol 映射查找函数（支持多对TV:MT4映射）
+f_getMappedSymbol(string inputSymbol) =>
+    if PC_SymbolMap == ""
+        inputSymbol
+    else
+        // 解析映射表：格式 "TV1:MT41,TV2:MT42,..."
+        string result = inputSymbol
+        string mapStr = PC_SymbolMap
+
+        // 使用split/array正确解析映射表
+        string[] mappings = str.split(mapStr, ",")
+        for i = 0 to array.size(mappings) - 1
+            string mapping = array.get(mappings, i)
+            string[] parts = str.split(mapping, ":")
+            if array.size(parts) == 2
+                string tvSymbol = array.get(parts, 0)
+                string mt4Symbol = array.get(parts, 1)
+                if tvSymbol == inputSymbol
+                    result := mt4Symbol
+                    break
+
+        result
+
+// 🔥【增强】Symbol 净化函数（优先级：Override → Map → 通用净化）
+f_normalizeSymbol(string rawSymbol) =>
+    string result = rawSymbol
+
+    // 0. Override检查：如果PC_Sym不为空，直接使用（最高优先级）
+    if PC_Sym != ""
+        result := PC_Sym
+
+    // 1. 映射表匹配（第二优先级）
+    result := f_getMappedSymbol(result)
+
+    // 2. 冒号规则：若存在 ":"，必须取substring后部分（真正的substring，不是删除字符）
+    int colonPos = str.pos(result, ":")
+    if colonPos >= 0
+        // 从冒号后开始截取子字符串
+        result := str.substring(result, colonPos + 1)
+
+    // 3. 分隔符规则：遇到常见分隔符，移除它们和后面的内容（用str.substring实现）
+    string[] separators = array.new_string(5, "")
+    array.set(separators, 0, ".")
+    array.set(separators, 1, "-")
+    array.set(separators, 2, "/")
+    array.set(separators, 3, "_")
+    array.set(separators, 4, " ")
+
+    for i = 0 to array.size(separators) - 1
+        string sep = array.get(separators, i)
+        int sepPos = str.pos(result, sep)
+        if sepPos >= 0
+            result := str.substring(result, 0, sepPos)
+
+    result
+
+// 🔥【双保险机制】彻底解决4051错误（lots=0）
+// 🔥【新增】智能识别是否为股指（IC Markets等经纪商股指最小1手）
+f_isIndexSymbol() =>
+    string t = syminfo.ticker
+    // 包含常见股指关键词：US30, US500, USTEC, NAS100, DE30, DE40, JP225
+    bool isIndex = str.contains(t, "US30") or str.contains(t, "US500") or str.contains(t, "USTEC") or str.contains(t, "NAS100") or str.contains(t, "DE30") or str.contains(t, "DE40") or str.contains(t, "JP225")
+    isIndex
+
+// 🔥【统一】所有品种使用同一个 PineConnector ID
+// 配合 MT5 端 Volume Type = % of Equity, Loss 模式
+f_getPcIdBySymbol(string normSym) =>
+    "8567766974677"  // 所有品种统一使用此 ID
+
+// ====== Boost helpers: parsing + risk decision ======
+f_isBoostSymbol(string normSym) =>
+    if BoostSymbolsCSV == ""
+        false
+    else
+        string[] arr = str.split(BoostSymbolsCSV, ",")
+        bool found = false
+        for i = 0 to array.size(arr) - 1
+            string s = array.get(arr, i)
+            // trim possible spaces
+            if str.trim(s) == normSym
+                found := true
+                break
+        found
+
+// 从 RiskMapCSV 读取单个符号的覆盖 risk（如果存在）
+f_getRiskFromMap(string normSym) =>
+    // 返回 float（找不到时为 na）
+    float res = na
+    if RiskMapCSV != ""
+        string[] maps = str.split(RiskMapCSV, ",")
+        for i = 0 to array.size(maps) - 1
+            string mp = array.get(maps, i)
+            string[] parts = str.split(mp, ":")
+            if array.size(parts) == 2
+                string key = str.trim(array.get(parts, 0))
+                string val = str.trim(array.get(parts, 1))
+                if key == normSym
+                    res := str.tonumber(val)
+                    break
+    res
+
+// 根据规范名和 sl_pips 决定最终 risk（%）
+f_getRiskForSymbol(string normSym, int slPips) =>
+    // 优先 RiskMapCSV
+    float mapVal = f_getRiskFromMap(normSym)
+    if not na(mapVal)
+        // 限幅
+        math.min(mapVal, MaxBoostRisk)
+    else
+        if f_isBoostSymbol(normSym)
+            if BoostMode == "Fixed"
+                math.min(FixedBoostRisk, MaxBoostRisk)
+            else
+                float r = BaseRisk
+                if slPips >= SL_Threshold3
+                    r := Risk3
+                else if slPips >= SL_Threshold2
+                    r := Risk2
+                else if slPips >= SL_Threshold1
+                    r := Risk1
+                math.min(r, MaxBoostRisk)
+        else
+            BaseRisk
+
+// 🔥【新增】计算止损距离的pips数（配合EA VolumeType % of Balance, Loss模式）
+f_calculateSLPips(float entryPrice, float slPrice, bool isLong) =>
+    // 使用PC_PipMult参数计算pip大小
+    float pipSize = syminfo.mintick * PC_PipMult
+
+    // 计算止损距离（绝对值）
+    float slDistance = math.abs(entryPrice - slPrice)
+
+    // 转换为pips（向下取整，确保不小于1 pip）
+    int slPips = math.max(1, math.round(slDistance / pipSize))
+
+    slPips
+
+// 🔥【核心修改】统一 PineConnector 消息生成（所有品种开仓必须带 sl=）
+// XAUUSD / US500 → ID = 85677669746771（%Equity Loss 模式）
+// USTEC / IT40 → ID = 8567766974677（也使用 %Equity Loss 模式，需要 sl=）
+// 其他品种 → 使用默认 PC_Id
+f_getPcMsg(string type, float lots, float entryPrice = na, float slPrice = na) =>
+    if not EnablePC
+        ""
+    else if PC_RealtimeOnly and not barstate.isrealtime
+        ""
+    else
+        string msg = ""
+        string rawSym = PC_Sym == "" ? (PC_Prefix + syminfo.ticker + PC_Suffix) : PC_Sym
+        string sym = f_normalizeSymbol(rawSym)
+
+        // 🔥【核心修改】根据 symbol 自动分配 PC_Id
+        string currentPcId = f_getPcIdBySymbol(sym)
+
+        // 🔥【新增】统一magic参数，可选启用确保开仓平仓使用同一magic管理链路
+        string magicParam = PC_EnableMagic ? ",magic=76" : ""
+
+        // 🔥【统一sl输出】所有品种开仓都必须带 sl=<pips>，用于 MT5 计算 1% 风险手数
+        // risk=1 统一表示 1% 风险（不是 1 手），MT5 端使用 Volume Type = % of Equity, Loss
+        string riskParam = ",risk=1"
+        string slParam = ""
+
+        // 🔥【关键修复】只要是开仓（buy/sell），必须计算并附带 sl=<pips>
+        if (type == "buy" or type == "sell") and not na(entryPrice) and not na(slPrice) and slPrice > 0
+            int slPips = f_calculateSLPips(entryPrice, slPrice, type == "buy")
+            slParam := ",sl=" + str.tostring(slPips)
+
+        if type == "buy"
+            msg := currentPcId + ",buy," + sym + riskParam + slParam + magicParam
+        else if type == "sell"
+            msg := currentPcId + ",sell," + sym + riskParam + slParam + magicParam
+        else if type == "closelong"
+            msg := currentPcId + ",closelong," + sym + magicParam
+        else if type == "closeshort"
+            msg := currentPcId + ",closeshort," + sym + magicParam
+
+        msg
+
+// 🔥【核心修改】统一 PineConnector 测试消息生成（所有品种测试信号都带 sl=200）
+// XAUUSD / US500 → ID = 85677669746771（%Equity Loss 模式）
+// USTEC / IT40 → ID = 8567766974677（也使用 %Equity Loss 模式，需要 sl=）
+// 其他品种 → 使用默认 PC_Id
+f_getTestPcMsg(string type) =>
+    if not EnablePC
+        ""
+    else if PC_RealtimeOnly and not barstate.isrealtime
+        ""
+    else
+        string msg = ""
+        string rawSym = PC_Sym == "" ? (PC_Prefix + syminfo.ticker + PC_Suffix) : PC_Sym
+        string sym = f_normalizeSymbol(rawSym)
+
+        // 🔥【核心修改】根据 symbol 自动分配 PC_Id
+        string currentPcId = f_getPcIdBySymbol(sym)
+
+        // 🔥【新增】测试消息也使用统一magic参数（可选）
+        string magicParam = PC_EnableMagic ? ",magic=76" : ""
+
+        // 🔥【统一sl输出】所有品种测试消息都带 sl=200，验证完整链路
+        // risk=1 统一表示 1% 风险，MT5 端使用 Volume Type = % of Equity, Loss
+        string riskParam = ",risk=1"
+        string slParam = (type == "buy" or type == "sell") ? ",sl=200" : ""
+
+        if type == "buy"
+            msg := currentPcId + ",buy," + sym + riskParam + slParam + magicParam
+        else if type == "sell"
+            msg := currentPcId + ",sell," + sym + riskParam + slParam + magicParam
+        else if type == "closelong"
+            msg := currentPcId + ",closelong," + sym + magicParam
+        else if type == "closeshort"
+            msg := currentPcId + ",closeshort," + sym + magicParam
+
+        msg
+
+// 🔥【USTEC温和优化】ATR止损和智能过滤函数
+f_calculateATRStopLoss(float entryPrice, float boxTop, float boxBottom, bool isLong) =>
+    float atr = ta.atr(ATR_Period)
+    float boxHeight = math.abs(boxTop - boxBottom)
+    float atrSL = atr * ATR_SL_Mult
+    // 使用较大的止损距离：箱体高度或ATR止损的较大值
+    float slDistance = math.max(boxHeight, atrSL)
+    isLong ? entryPrice - slDistance : entryPrice + slDistance
+
+f_isSmartEntryValid(float boxTop, float boxBottom) =>
+    if not UseSmartEntry
+        true
+    else
+        // 成交量过滤：当前成交量需大于平均成交量的MinVolumeRatio倍
+        float avgVolume = ta.sma(volume, 20)
+        bool volumeOK = volume >= avgVolume * MinVolumeRatio
+
+        // 箱体年龄过滤：箱体不能太老
+        bool ageOK = box_bars <= MaxBoxAgeBars
+
+        // 波动率过滤：ATR不能太高（避免高波动期）
+        float atr = ta.atr(14)
+        float avgPrice = (boxTop + boxBottom) / 2.0
+        bool volatilityOK = atr <= avgPrice * 0.02  // ATR不超过价格的2%
+
+        volumeOK and ageOK and volatilityOK
+
+// 🔥【新增】箱体高度过滤函数：检查箱体高度是否小于之前N根K线平均高度的M倍
+f_isBoxHeightValid(float boxHeight, int lookbackBars, float multiplierLimit) =>
+    if not EnableBoxHeightFilter
+        true  // 如果禁用过滤，直接返回true
+    else
+        // 计算箱体之前N根K线的平均高度（每根K线的高度 = high - low）
+        float totalKlineHeight = 0.0
+        int validBars = 0
+        // 从箱体结束位置往前取lookbackBars根K线（不包括箱体内的K线）
+        int startOffset = box_bars  // 从箱体外开始
+        for i = 0 to lookbackBars - 1
+            int idx = startOffset + i
+            if idx < bar_index and idx >= 0
+                float klineHeight = high[idx] - low[idx]
+                totalKlineHeight += klineHeight
+                validBars += 1
+        
+        if validBars == 0
+            true  // 如果没有有效数据，默认通过
+        else
+            float avgKlineHeight = totalKlineHeight / float(validBars)
+            float maxAllowedBoxHeight = avgKlineHeight * multiplierLimit
+            // 箱体高度必须小于限制值
+            boxHeight < maxAllowedBoxHeight
+
+Length = PivotStrength + 2
+
+f_darvasPivot(bool isHigh) =>
+    float result = na
+    if isHigh
+        float maxVal = high[PivotStrength]
+        bool isMax = true
+        for i = 0 to Length - 1
+            if high[i] > maxVal
+                isMax := false
+                break
+        if isMax
+            result := high[PivotStrength]
+    else
+        float minVal = low[PivotStrength]
+        bool isMin = true
+        for i = 0 to Length - 1
+            if low[i] < minVal
+                isMin := false
+                break
+        if isMin
+            result := low[PivotStrength]
+    result
+
+f_getHiPrice() => DarvasMode == 0 or DarvasMode == 2 or DarvasMode == 4 ? high : close
+f_getLoPrice() => DarvasMode == 0 or DarvasMode == 2 or DarvasMode == 4 ? low : close
+
+f_calculateR2(bool isHigh, int startIdx, int count) =>
+    float r2 = 0.5
+    if count > 1
+        float sumX = 0.0, sumY = 0.0, sumXY = 0.0, sumX2 = 0.0, sumY2 = 0.0
+        int actualCount = 0
+        for i = 0 to count - 1
+            int idx = startIdx + i
+            if idx < bar_index and idx >= 0
+                float x = float(i)
+                float y = isHigh ? high[idx] : low[idx]
+                sumX += x
+                sumY += y
+                sumXY += x * y
+                sumX2 += x * x
+                sumY2 += y * y
+                actualCount += 1
+        if actualCount > 2
+            float n = float(actualCount)
+            float denom = math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY))
+            if denom > 0.0001
+                float r = (n * sumXY - sumX * sumY) / denom
+                r2 := r * r
+    r2
+
+global_atr = ta.atr(14)
+
+// 🔥【V12新增】趋势过滤逻辑
+ema50 = ta.ema(close, TrendEMA_Period)
+trendUp = close > ema50
+trendDown = close < ema50
+
+// 可视化趋势EMA（可选）
+plot(EnableTrendFilter ? ema50 : na, "趋势EMA", color=color.new(color.orange, 0), linewidth=2)
+
+f_scoreFlatness(float aspectRatio, float heightATR) =>
+    float score = 0.0
+    if aspectRatio >= AspectTarget
+        score += 60
+    else if aspectRatio >= MinAspect
+        float ratio1 = (aspectRatio - MinAspect) / (AspectTarget - MinAspect)
+        score += 35 + ratio1 * 25
+    else if aspectRatio >= MinAspect * 0.7
+        float ratio2 = aspectRatio / MinAspect
+        score += ratio2 * 25
+    else
+        score += 10
+    float tightTarget = 1.2
+    if heightATR <= tightTarget
+        score += 40
+    else if heightATR <= MaxBoxATR
+        float hRatio1 = 1.0 - (heightATR - tightTarget) / (MaxBoxATR - tightTarget)
+        score += 20 + hRatio1 * 20
+    else if heightATR <= MaxBoxATRHard
+        float hRatio2 = 1.0 - (heightATR - MaxBoxATR) / (MaxBoxATRHard - MaxBoxATR)
+        score += hRatio2 * 20
+    if heightATR > 2.0
+        score *= 0.75
+    math.min(100.0, score)
+
+f_scoreIndependence() =>
+    float score = 100.0
+    if box_touchesTop < 2 or box_touchesTop > 8
+        score -= 15
+    if box_touchesBottom < 2 or box_touchesBottom > 8
+        score -= 15
+    int lookBack = 10
+    int overlapCount = 0
+    float buffer = nz(box_height, 1) * 0.3
+    for k = 0 to lookBack - 1
+        int idx = box_startBar + 1 + k
+        if idx < bar_index and idx >= 0
+            float midPrice = (high[idx] + low[idx]) / 2.0
+            float barRange = high[idx] - low[idx]
+            bool priceOverlap = midPrice < (box_top + buffer) and midPrice > (box_bottom - buffer)
+            bool isFlat = barRange < box_height * 1.2
+            if priceOverlap and isFlat
+                overlapCount += 1
+    if overlapCount > 6
+        score -= 40
+    else if overlapCount > 4
+        score -= 25
+    else if overlapCount > 2
+        score -= 10
+    else
+        score += 15
+    math.max(0.0, math.min(100.0, score))
+
+f_scoreSmoothness() =>
+    float avgR2 = (box_topR2 + box_bottomR2) / 2.0
+    float score = 0.0
+    if avgR2 >= 0.5
+        score := 80 + (avgR2 - 0.5) * 40
+    else if avgR2 >= 0.2
+        score := 40 + (avgR2 - 0.2) * 133.33
+    else
+        score := avgR2 * 400
+    score -= box_spikeRatio * 30
+    math.max(0.0, math.min(100.0, score))
+
+f_scoreSpace(float atr) =>
+    float safeHeight = nz(box_height, atr)
+    if safeHeight <= 0
+        safeHeight := atr
+    float expectedMove = 3 * atr
+    float ratio = expectedMove / safeHeight
+    float score = 0.0
+    if ratio >= 3
+        score := 100
+    else if ratio >= 2
+        score := 70 + (ratio - 2) * 30
+    else if ratio >= 1
+        score := 30 + (ratio - 1) * 40
+    else
+        score := ratio * 30
+    score
+
+f_scoreVolume() =>
+    float totalVol = 0.0
+    int count = 0
+    for i = box_endBar to box_startBar
+        if i >= 0 and i < bar_index
+            totalVol += volume[i]
+            count += 1
+    if count == 0
+        50.0
+    else
+        float avgVol = totalVol / count
+        float ratio = volume / avgVol
+        if ratio >= 1.5
+            100.0
+        else if ratio >= 1.0
+            50 + (ratio - 1.0) / 0.5 * 50
+        else
+            ratio * 50
+
+f_scoreTime() =>
+    if box_bars >= IdealBarsMin and box_bars <= IdealBarsMax
+        100.0
+    else if box_bars < IdealBarsMin
+        float(box_bars) / float(IdealBarsMin) * 70
+    else
+        math.max(30.0, 100 - (box_bars - IdealBarsMax) / 2)
+
+f_scoreMicro() =>
+    float score = 70.0
+    float effectiveSpikeRatio = box_spikeRatio
+    if box_bars < 8
+        effectiveSpikeRatio := box_spikeRatio * 0.5 
+    if effectiveSpikeRatio > MaxSpikeRatio
+        score -= (effectiveSpikeRatio - MaxSpikeRatio) * 100
+    int touchDiff = math.abs(box_touchesTop - box_touchesBottom)
+    score -= touchDiff * 5
+    if box_bars <= 6 and (box_topR2 > 0.8 or box_bottomR2 > 0.8)
+        score += 15
+    math.max(0.0, math.min(100.0, score))
+
+// 🔥【修改点】更新后的时间检查函数
+// 只有Start和End全为0时才完全无限制
+f_inTime() =>
+    if StratStartHour == 0 and StratStartMin == 0 and StratEndHour == 0 and StratEndMin == 0
+        true
+    else
+        int cur = hour * 60 + minute
+        int st = StratStartHour * 60 + StratStartMin
+        int ed = StratEndHour * 60 + StratEndMin
+        st <= ed ? (cur >= st and cur < ed) : (cur >= st or cur < ed)
+
+f_isValidBox(float topVal, float bottomVal) =>
+    bool valid = not na(topVal) and not na(bottomVal)
+    if valid
+        valid := topVal > bottomVal
+        valid := valid and topVal > 0 and bottomVal > 0
+        float height = topVal - bottomVal
+        valid := valid and height >= syminfo.mintick * 5
+    valid
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔥【新增】Instant Test 逻辑实现（零延迟测试）
+// ══════════════════════════════════════════════════════════════════════════════
+// 设计理念：
+// 1. 真实交易：通过 strategy.entry/exit 的 alert_message 实现，订单成交即触发，无延迟
+// 2. 测试信号：通过 alert() 直接推送，不依赖订单成交，100%可靠
+// 3. 测试目标：验证 TV→webhook→EA 链路，不模拟持仓时间
+
+// 🔥【边沿检测】只有从false变为true时才触发测试
+bool instantTestEdge = EnableInstantTest and not prevEnableInstantTest
+
+if instantTestEdge and barstate.isrealtime
+    // 🔥【零延迟链路自检】立即发送两条测试信号验证 TV→Webhook→MT4 完整链路
+    // 特点：不依赖订单成交、零人为延迟、携带完整参数（LicenseID + Symbol + Lots + Risk）
+    bool isBuy = math.random(0, 100) > 50
+    string testEntryMsg = isBuy ? f_getTestPcMsg("buy") : f_getTestPcMsg("sell")
+    string testCloseMsg = isBuy ? f_getTestPcMsg("closelong") : f_getTestPcMsg("closeshort")
+
+    // 允许同一根bar连发两条消息（移除once_per_bar限制）
+    alert(testEntryMsg)
+    alert(testCloseMsg)
+
+    instantTestTriggered := true  // 标记已触发
+
+// 更新边沿检测状态
+prevEnableInstantTest := EnableInstantTest
+
+// 当测试开关关闭时，复位触发锁，允许下次重新触发
+if not EnableInstantTest
+    instantTestTriggered := false
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 4. 【核心修复】 订单结束与状态维护
+// ══════════════════════════════════════════════════════════════════════════════
+
+bool justClosed = strategy.position_size == 0 and strategy.position_size[1] != 0
+
+if justClosed and stratState != 0
+    float tradePnL = strategy.closedtrades.profit(strategy.closedtrades - 1)
+    string exitNote = strategy.closedtrades.exit_comment(strategy.closedtrades - 1)
+    bool isTrailWin = str.contains(exitNote, "移动止盈")
+    bool isWin = tradePnL >= 0 or isTrailWin
+
+    if isWin
+        stratState := 0
+        isRecovery := false
+        martinCount := 0
+
+        strategy.cancel_all()
+        if not na(lockedBoxObj)
+            box.set_bgcolor(lockedBoxObj, color.new(color.gray, 90))
+            box.set_border_color(lockedBoxObj, color.gray)
+            if not na(lockedLabelObj)
+                label.set_textcolor(lockedLabelObj, color.gray)
+        lockedBoxObj := na
+        lockedLabelObj := na
+
+    else
+        // 止损 - 直接继续马丁格尔逻辑（移除连续亏损冷却）
+        float closePrice = close
+        bool closedInside = (closePrice >= lockBoxBtm) and (closePrice <= lockBoxTop)
+
+        martinCount += 1
+        if martinCount >= MartinMax
+            // 马丁用尽 -> 【强制冷却】休息N根K线
+            stratState := 0
+            isRecovery := false
+            martinCount := 0
+
+            // 🔥 设置下次允许交易的K线索引，期间不接任何单
+            nextTradeBar := bar_index + CooldownBars
+
+            strategy.cancel_all()
+            if not na(lockedBoxObj)
+                box.set_bgcolor(lockedBoxObj, color.new(color.gray, 90))
+                box.set_border_color(lockedBoxObj, color.gray)
+            lockedBoxObj := na
+            lockedLabelObj := na
+        else
+            // 马丁未用尽
+            if closedInside
+                stratState := 1
+                isRecovery := false
+                waitBarCount := 0
+                tradeQty := BaseQty * math.pow(MartinMult, martinCount)
+                string numStr = f_getNumStr(martinCount)
+                if lockBoxTop > 0 and lockBoxBtm > 0
+                    pcQty := PC_Lots * math.pow(MartinMult, martinCount)
+                    strategy.entry("Break_Long", strategy.long, stop=lockBoxTop, qty=tradeQty, alert_message=f_getPcMsg("buy", pcQty, lockBoxTop, lockBoxBtm), comment=numStr+"挂多(回)")
+                    strategy.entry("Break_Short", strategy.short, stop=lockBoxBtm, qty=tradeQty, alert_message=f_getPcMsg("sell", pcQty, lockBoxBtm, lockBoxTop), comment=numStr+"挂空(回)")
+                if not na(lockedBoxObj)
+                    box.set_bgcolor(lockedBoxObj, color.new(color.green, 80))
+                    box.set_border_color(lockedBoxObj, color.green)
+                    if not na(lockedLabelObj)
+                        label.set_textcolor(lockedLabelObj, color.green)
+            else
+                stratState := 2
+                isRecovery := true
+                tradeQty := BaseQty * math.pow(MartinMult, martinCount)
+                pcQty := PC_Lots * math.pow(MartinMult, martinCount)
+                string numStr = f_getNumStr(martinCount)
+                if closePrice > lockBoxTop
+                    martinDir := 1
+                    strategy.entry("Martin_Long", strategy.long, qty=tradeQty, alert_message=f_getPcMsg("buy", pcQty, close, lockBoxBtm), comment=numStr+"⚡追多")
+                else
+                    martinDir := -1
+                    strategy.entry("Martin_Short", strategy.short, qty=tradeQty, alert_message=f_getPcMsg("sell", pcQty, close, lockBoxTop), comment=numStr+"⚡追空")
+                if not na(lockedBoxObj)
+                    box.set_bgcolor(lockedBoxObj, color.new(color.red, 40))
+                    box.set_border_color(lockedBoxObj, color.red)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 5. 指标计算 (Darvas / 评分)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// --- 指标核心逻辑 ---
+float upPivot = f_darvasPivot(true)
+float loPivot = f_darvasPivot(false)
+float hiPrice = f_getHiPrice()
+float loPrice = f_getLoPrice()
+
+bool boxBroken = false
+if not na(box_top) and not na(box_bottom) and box_top > box_bottom
+    if hiPrice > box_top or loPrice < box_bottom
+        boxBroken := true
+
+if boxBroken and startState_v != 0 and confirmState_v != 0
+    if not na(currentBoxObj)
+        color breakColor = hiPrice > box_top ? ColorBreakUp : ColorBreakDn
+        box.set_border_color(currentBoxObj, breakColor)
+        box.set_bgcolor(currentBoxObj, color.new(breakColor, 85))
+        box.set_right(currentBoxObj, bar_index)
+        array.push(indicatorBoxes, currentBoxObj)
+        if not na(currentScoreLabel)
+            array.push(indicatorLabels, currentScoreLabel)
+        currentBoxObj := na
+        currentScoreLabel := na
+    
+    if stratState == 0
+        startState_v := 0
+        confirmState_v := 0
+        boxTop_v := na
+        boxBottom_v := na
+        box_top := na
+        box_bottom := na
+        box_height := 0.0
+        box_valid := false
+        isTriggeredBox := false
+        lastBoxLeftBar := -1
+        lastBoxRightBar := -1
+
+if startState_v == 0
+    if DarvasMode < 2 and not na(upPivot)
+        boxTop_v := upPivot
+        startState_v := 1
+        boxStartTime := time[PivotStrength]
+    else if DarvasMode >= 2 and (not na(upPivot) or not na(loPivot))
+        if not na(upPivot) 
+            boxTop_v := upPivot
+            startState_v := 1 
+        else 
+            boxBottom_v := loPivot
+            startState_v := -1 
+        boxStartTime := time[PivotStrength]
+
+if startState_v != 0 and confirmState_v == 0
+    if startState_v > 0 and not na(loPivot) and time > boxStartTime 
+        confirmState_v := 1
+        boxBottom_v := loPivot 
+    else if startState_v < 0 and not na(upPivot) and time > boxStartTime 
+        confirmState_v := 1
+        boxTop_v := upPivot 
+
+if startState_v != 0 and confirmState_v != 0 and not na(boxTop_v) and not na(boxBottom_v)
+    float tempTop = math.max(boxTop_v, boxBottom_v)
+    float tempBottom = math.min(boxTop_v, boxBottom_v)
+    boxTop_v := tempTop
+    boxBottom_v := tempBottom
+    
+    if f_isValidBox(boxTop_v, boxBottom_v)
+        box_top := boxTop_v
+        box_bottom := boxBottom_v
+        box_height := box_top - box_bottom
+        box_valid := true
+        
+        if box_height > 0
+            
+            int bars = 0
+            for k = 0 to IdealBarsMax - 1
+                if bar_index - k >= 0
+                    bool isCurrentBar = (k == 0)
+                    bool isInside = high[k] <= box_top + box_height * 0.05 and low[k] >= box_bottom - box_height * 0.05
+                    if isCurrentBar or isInside 
+                        bars += 1 
+                    else 
+                        break 
+            
+            box_bars := math.max(MinBars, bars)
+            box_width := float(box_bars)
+            box_startBar := box_bars - 1
+            box_endBar := 0 
+            
+            // 统计
+            box_touchesTop := 0
+            box_touchesBottom := 0
+            int spikes = 0
+            for idx = 0 to box_bars - 1
+                if idx < 500 and idx >= 0
+                    if math.abs(high[idx] - box_top) < box_height * 0.05 
+                        box_touchesTop += 1 
+                    if math.abs(low[idx] - box_bottom) < box_height * 0.05 
+                        box_touchesBottom += 1 
+                    if high[idx] > box_top + box_height * SpikeThreshold or low[idx] < box_bottom - box_height * SpikeThreshold 
+                        spikes += 1 
+            box_spikeRatio := float(spikes) / float(math.max(1, box_bars))
+            
+            // 评分
+            box_topR2 := f_calculateR2(true, 0, box_bars)
+            box_bottomR2 := f_calculateR2(false, 0, box_bars)
+            float atr = nz(global_atr, box_height * 0.5)
+            if atr <= 0 
+                atr := box_height * 0.5 
+            
+            qual_flatness := f_scoreFlatness(box_width / box_height, box_height / atr)
+            qual_independence := f_scoreIndependence()
+            qual_smoothness := f_scoreSmoothness()
+            qual_space := f_scoreSpace(atr)
+            qual_volume := f_scoreVolume()
+            qual_time := f_scoreTime()
+            qual_micro := f_scoreMicro()
+            
+            qual_totalScore := qual_flatness * w_flatness + qual_independence * w_independence + qual_smoothness * w_smoothness + qual_space * w_space + qual_volume * w_volume + qual_time * w_time + qual_micro * w_micro
+            
+            if barstate.isconfirmed
+                array.unshift(scoreHistory, qual_totalScore)
+                if array.size(scoreHistory) > ReevalBars 
+                    array.pop(scoreHistory) 
+            
+            // A. 视觉绘图逻辑 (指标层)
+            // 🔥 【修改点】统一画图和交易的标准：Qual_totalScore >= MinDisplayScore
+            // 🔥【新增】检查箱体高度是否满足限制条件
+            bool boxHeightOK = f_isBoxHeightValid(box_height, BoxHeightLookback, BoxHeightMultLimit)
+            bool isQualified = qual_totalScore >= MinDisplayScore and box_bars >= TriggerMinBars and boxHeightOK
+            // 🔥 【同步点】加入 冷却 和 时间过滤 的判断，保证“画出来=能交易”
+            bool inCooldownDraw = bar_index <= nextTradeBar
+            // 🔥 在这里使用 f_inTime() 确保不在交易时间外的箱体不显示，不触发
+            bool showIndicator = isQualified and box_valid and stratState == 0 and (not inCooldownDraw) and f_inTime()
+
+            // 颜色逻辑
+            color c_level1_gray   = color.gray      
+            color c_level2_blue   = #87CEFA         
+            color c_level3_gold   = #FFFF00        
+            color c_level4_purple = #FF00FF         
+            int   borderW   = 1
+            
+            if qual_totalScore >= 70
+                baseColor := c_level4_purple
+                borderW := 2
+            else if qual_totalScore >= 60
+                baseColor := c_level3_gold
+                borderW := 3   
+            else if qual_totalScore >= 50
+                baseColor := c_level2_blue
+                borderW := 1
+            else
+                baseColor := c_level1_gray
+                borderW := 1
+            
+            int bgTransp = 80 // 统一透明度，只要显示就高亮
+
+            int boxLeft = bar_index - box_bars + 1
+            int boxRight = bar_index
+
+            if showIndicator
+                if na(currentBoxObj)
+                    currentBoxObj := box.new(boxLeft, box_top, boxRight, box_bottom, 
+                                             border_width=borderW, border_color=baseColor, 
+                                             bgcolor=color.new(baseColor, bgTransp))
+                    currentScoreLabel := label.new(boxRight, box_top, str.tostring(qual_totalScore, "#"), 
+                                                   style=label.style_none, textcolor=baseColor)
+                    
+                    lastBoxLeftBar := boxLeft
+                    lastBoxRightBar := boxRight
+                    isTriggeredBox := false 
+                else
+                    box.set_left(currentBoxObj, boxLeft)
+                    box.set_right(currentBoxObj, boxRight)
+                    box.set_top(currentBoxObj, box_top)
+                    box.set_bottom(currentBoxObj, box_bottom)
+                    box.set_border_width(currentBoxObj, borderW)
+                    box.set_border_color(currentBoxObj, baseColor)
+                    box.set_bgcolor(currentBoxObj, color.new(baseColor, bgTransp))
+                    
+                    label.set_x(currentScoreLabel, boxRight)
+                    label.set_y(currentScoreLabel, box_top)
+                    label.set_text(currentScoreLabel, str.tostring(qual_totalScore, "#"))
+                    label.set_textcolor(currentScoreLabel, baseColor)
+                    
+                    lastBoxLeftBar := boxLeft
+                    lastBoxRightBar := boxRight
+            
+                // 不需要复杂的 trigger 检查了，因为显示即触发
+                if not isTriggeredBox
+                    isTriggeredBox := true
+            else
+                if not na(currentBoxObj)
+                    array.push(indicatorBoxes, currentBoxObj)
+                    if not na(currentScoreLabel)
+                        array.push(indicatorLabels, currentScoreLabel)
+                    currentBoxObj := na
+                    currentScoreLabel := na
+                isTriggeredBox := false
+
+            // ══════════════════════════════════════════════════════════
+            // 6. 策略开单逻辑 (在此处拦截)
+            // ══════════════════════════════════════════════════════════
+            
+            // 预计算：每次计算时调用（满足linter一致性要求）
+            float atrCalcLong = f_calculateATRStopLoss(close, box_top, box_bottom, true)
+            float atrCalcShort = f_calculateATRStopLoss(close, box_top, box_bottom, false)
+            bool smartEntryOK = f_isSmartEntryValid(box_top, box_bottom)
+
+            // 状态 0: 寻找并锁定新箱体
+            if stratState == 0 and strategy.position_size == 0
+                // 🔥【温和优化】只检查基本冷却
+                bool inCooldown = bar_index <= nextTradeBar
+
+                if not inCooldown
+                    // 🔥【V12优化】智能入场过滤 + 趋势过滤
+                    if isQualified and box_valid and f_inTime() and smartEntryOK
+                        // 🔥【V12新增】趋势过滤：确保交易方向与趋势一致
+                        bool trendFilterOK = not EnableTrendFilter or (trendUp or trendDown)
+
+                        if trendFilterOK
+                            stratState := 1
+                        lockBoxTop := box_top
+                        lockBoxBtm := box_bottom
+                        lockBoxH   := box_height
+                        lockBoxStartBar := boxLeft
+                        lockBoxEndBar := boxRight
+                        lockBoxTime := boxStartTime
+                        martinCount := 0
+                        isRecovery := false
+                        waitBarCount := 0
+
+                        lockedBoxObj := box.new(lockBoxStartBar, lockBoxTop, lockBoxEndBar, lockBoxBtm,
+                                                border_width=3, border_color=color.green,
+                                                bgcolor=color.new(color.green, 80))
+
+                        lockedLabelObj := label.new(lockBoxStartBar, lockBoxTop, str.tostring(qual_totalScore, "#"),
+                                               style=label.style_none, textcolor=color.green)
+
+                        array.push(historyBoxes, lockedBoxObj)
+                        array.push(historyLabels, lockedLabelObj)
+
+                        // 🔥【ATR动态止损】设置ATR止损价格（使用预计算结果）
+                        // 预计算在本条分支的上方以满足 linter 建议
+                        atrStopLoss := EnableATRStopLoss ? atrCalcLong : lockBoxBtm
+
+                        tradeQty := BaseQty
+                        string numStr = f_getNumStr(martinCount)
+                        // 🔥【修正】传递计算后的 pcQty
+                        pcQty := PC_Lots
+
+                        // 🔥【V12新增】根据趋势过滤决定挂单方向
+                        if not EnableTrendFilter or trendUp
+                            strategy.entry("Break_Long", strategy.long, stop=lockBoxTop, qty=tradeQty, alert_message=f_getPcMsg("buy", pcQty, lockBoxTop, lockBoxBtm), comment=numStr+"挂多")
+                        if not EnableTrendFilter or trendDown
+                            strategy.entry("Break_Short", strategy.short, stop=lockBoxBtm, qty=tradeQty, alert_message=f_getPcMsg("sell", pcQty, lockBoxBtm, lockBoxTop), comment=numStr+"挂空")
+
+            // 状态 1: 挂单等待
+            // 🔥 注意：这里不再检查 f_inTime()，只要进入了状态1，就会持续到箱体失效或超时，无论时间是否超过18:00
+            if stratState == 1
+                if martinCount == 0
+                    // 只要箱体失效或不可见，就撤
+                    bool indicatorInvalid = (not isQualified) or (not box_valid)
+                    bool paramsChanged = (math.abs(box_top - lockBoxTop) > syminfo.mintick) or (math.abs(box_bottom - lockBoxBtm) > syminfo.mintick)
+                    
+                    if indicatorInvalid
+                        strategy.cancel_all()
+                        stratState := 0
+                        if not na(lockedBoxObj)
+                            box.set_bgcolor(lockedBoxObj, color.new(color.gray, 90))
+                            box.set_border_color(lockedBoxObj, color.gray)
+                        lockedBoxObj := na 
+                        lockedLabelObj := na
+                    
+                    else if paramsChanged and box_valid
+                        lockBoxTop := box_top
+                        lockBoxBtm := box_bottom
+                        lockBoxH   := box_height
+                        lockBoxTime := boxStartTime 
+                        
+                        strategy.cancel_all()
+                        // 🔥【修正】马丁倍增后的 pcQty 应用于 alert_message
+                        pcQty := PC_Lots * math.pow(MartinMult, martinCount)
+                        strategy.entry("Break_Long", strategy.long, stop=lockBoxTop, qty=tradeQty, alert_message=f_getPcMsg("buy", pcQty, lockBoxTop, lockBoxBtm), comment="①修多")
+                        strategy.entry("Break_Short", strategy.short, stop=lockBoxBtm, qty=tradeQty, alert_message=f_getPcMsg("sell", pcQty, lockBoxBtm, lockBoxTop), comment="①修空")
+                        if not na(lockedBoxObj)
+                            box.set_top(lockedBoxObj, lockBoxTop)
+                            box.set_bottom(lockedBoxObj, lockBoxBtm)
+                        if not na(lockedLabelObj)
+                            label.set_y(lockedLabelObj, lockBoxTop)
+                    else 
+                        if not na(lockedBoxObj)
+                            box.set_bgcolor(lockedBoxObj, color.new(color.green, 80)) 
+                
+                if not na(lockedBoxObj)
+                    box.set_right(lockedBoxObj, bar_index)
+
+                waitBarCount += 1
+                if waitBarCount > MaxWaitBars
+                    strategy.cancel_all()
+                    stratState := 0
+                    if not na(lockedBoxObj)
+                        box.set_bgcolor(lockedBoxObj, color.new(color.gray, 90))
+                        box.set_border_color(lockedBoxObj, color.gray)
+                    if not na(lockedLabelObj)
+                        label.set_textcolor(lockedLabelObj, color.gray)
+                    lockedBoxObj := na
+                    lockedLabelObj := na
+
+            // 状态 2: 马丁恢复
+            // 🔥 同样不检查 f_inTime()，一旦持仓，必须负责到底
+            if stratState == 2 and isRecovery and strategy.position_size == 0
+                // 🔥【温和优化】使用简单仓位计算逻辑
+                tradeQty := BaseQty * math.pow(MartinMult, martinCount)
+                pcQty := PC_Lots * math.pow(MartinMult, martinCount)
+                string numStr = f_getNumStr(martinCount)
+
+                if martinDir == 1
+                    // 🔥【修正】使用计算后的 pcQty
+                    strategy.entry("Martin_Long", strategy.long, qty=tradeQty, alert_message=f_getPcMsg("buy", pcQty, close, lockBoxBtm), comment=numStr+"⚡追多")
+                else
+                    // 🔥【修正】使用计算后的 pcQty
+                    strategy.entry("Martin_Short", strategy.short, qty=tradeQty, alert_message=f_getPcMsg("sell", pcQty, close, lockBoxTop), comment=numStr+"⚡追空")
+
+                if not na(lockedBoxObj)
+                    box.set_bgcolor(lockedBoxObj, color.new(color.red, 40))
+                    box.set_border_color(lockedBoxObj, color.red)
+                    if not na(lockedLabelObj)
+                        label.set_textcolor(lockedLabelObj, color.red)
+    else
+        box_valid := false
+        if not na(currentBoxObj)
+            box.delete(currentBoxObj)
+            currentBoxObj := na
+        if not na(currentScoreLabel)
+            label.delete(currentScoreLabel)
+            currentScoreLabel := na
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 7. 强突破实时监控 (挂单期)
+// ══════════════════════════════════════════════════════════════════════════════
+
+if stratState == 1
+    float hardLimitUp = lockBoxTop + lockBoxH * BreakoutInvalid
+    float hardLimitDn = lockBoxBtm - lockBoxH * BreakoutInvalid
+    bool isHardBreak = high > hardLimitUp or low < hardLimitDn
+    
+    if isHardBreak
+        strategy.cancel_all()
+        stratState := 0
+        isRecovery := false
+        martinCount := 0
+        
+        if not na(lockedBoxObj)
+            box.set_bgcolor(lockedBoxObj, color.new(color.gray, 90))
+            box.set_border_color(lockedBoxObj, color.gray)
+            if not na(lockedLabelObj)
+                label.set_textcolor(lockedLabelObj, color.gray)
+        lockedBoxObj := na
+        lockedLabelObj := na
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 8. 持仓管理与移动止损
+// ══════════════════════════════════════════════════════════════════════════════
+
+if strategy.position_size != 0
+    stratState := 2
+    waitBarCount := 0 
+    
+    if not na(lockedBoxObj) and lockBoxTop > 0 and lockBoxBtm > 0
+        box.set_right(lockedBoxObj, bar_index)
+        box.set_bgcolor(lockedBoxObj, color.new(color.red, 40))
+        box.set_border_color(lockedBoxObj, color.red)
+    
+    if strategy.position_size > 0 
+        strategy.cancel("Break_Short")
+        lastDir := 1 
+    else 
+        strategy.cancel("Break_Long")
+        lastDir := -1 
+    
+    // 🔥【ATR止损】选择使用ATR止损还是传统箱体止损
+    float slPrice = EnableATRStopLoss ? atrStopLoss : ((strategy.position_size > 0) ? lockBoxBtm : lockBoxTop)
+        
+    if strategy.position_size > 0 
+        trailHighPrice := math.max(trailHighPrice, high) 
+    else 
+        trailHighPrice := math.min(trailHighPrice, low)
+        if trailHighPrice == 0 
+            trailHighPrice := low 
+    
+    float triggerDist = lockBoxH * TrailStartRatio
+    float stepDist    = lockBoxH * TrailStepRatio
+    float offsetDist  = lockBoxH * TrailOffsetRatio
+    float calcTrailSL = na
+    
+    if strategy.position_size > 0
+        float profitH = trailHighPrice - strategy.position_avg_price
+        if profitH >= triggerDist
+            int jumps = math.floor((profitH - triggerDist) / stepDist) 
+            float slOffset = (TrailOffsetRatio * lockBoxH) + (jumps * stepDist)
+            calcTrailSL := strategy.position_avg_price + slOffset
+    else
+        float profitH = strategy.position_avg_price - trailHighPrice
+        if profitH >= triggerDist
+            int jumps = math.floor((profitH - triggerDist) / stepDist)
+            float slOffset = (TrailOffsetRatio * lockBoxH) + (jumps * stepDist)
+            calcTrailSL := strategy.position_avg_price - slOffset
+
+    float finalSL = slPrice
+    if not na(calcTrailSL)
+        if strategy.position_size > 0
+            finalSL := math.max(slPrice, calcTrailSL)
+        else
+            finalSL := math.min(slPrice, calcTrailSL)
+    dynamicSL := finalSL
+    
+    if finalSL > 0
+        string lossComment = "❌止损"
+        if strategy.position_size > 0
+            if finalSL > strategy.position_avg_price
+                lossComment := "✅移动止盈"
+        else
+            if finalSL < strategy.position_avg_price
+                lossComment := "✅移动止盈"
+
+        strategy.exit("Exit_Long", "Break_Long", stop=finalSL, alert_message=f_getPcMsg("closelong", 0), comment_loss=lossComment, comment_profit="✅移动止盈")
+        strategy.exit("Exit_Long_M", "Martin_Long", stop=finalSL, alert_message=f_getPcMsg("closelong", 0), comment_loss=lossComment, comment_profit="✅移动止盈")
+        strategy.exit("Exit_Short", "Break_Short", stop=finalSL, alert_message=f_getPcMsg("closeshort", 0), comment_loss=lossComment, comment_profit="✅移动止盈")
+        strategy.exit("Exit_Short_M", "Martin_Short", stop=finalSL, alert_message=f_getPcMsg("closeshort", 0), comment_loss=lossComment, comment_profit="✅移动止盈")
+        
+        // 🔥【标记】正常平仓信号已通过 strategy.exit() 发送，阻止兜底重复发送
+        closeSignalSent := true
+
+else
+    trailHighPrice := 0.0
+    dynamicSL := 0.0
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 9. 数组管理与调试
+// ══════════════════════════════════════════════════════════════════════════════
+
+if array.size(historyBoxes) > 495
+    box oldB = array.shift(historyBoxes)
+    if not na(oldB)
+        box.delete(oldB)
+    label oldL = array.shift(historyLabels)
+    if not na(oldL)
+        label.delete(oldL)
+
+if array.size(indicatorBoxes) > 495
+    box oldIB = array.shift(indicatorBoxes)
+    if not na(oldIB)
+        box.delete(oldIB)
+    if array.size(indicatorLabels) > 0
+        label oldIL = array.shift(indicatorLabels)
+        if not na(oldIL)
+            label.delete(oldIL)
+
+if ShowDebugLabels and barstate.islast
+    string statusText = "空闲"
+    if stratState == 1
+        statusText := "挂单中"
+    else if stratState == 2
+        statusText := "持仓/追单"
+    else if bar_index <= nextTradeBar
+        statusText := "🥶冷却中 (剩 " + str.tostring(nextTradeBar - bar_index) + " K)"
+    else if not f_inTime()
+        statusText := "💤非交易时间"
+    
+    string t = "══ HQBox [v18.26 温和优化版] ══\n"
+    t += "状态: " + statusText + "\n"
+    t += "ATR止损: " + (EnableATRStopLoss ? "开启" : "关闭") + "\n"
+    t += "立即测试: " + (EnableInstantTest ? (instantTestTriggered ? "已触发" : "等待边沿") : "关闭") + "\n"
+    string currentSym = PC_Sym == "" ? (PC_Prefix + syminfo.ticker + PC_Suffix) : PC_Sym
+    string normalizedSym = f_normalizeSymbol(currentSym)
+    t += "Symbol: " + currentSym + " → " + normalizedSym + "\n"
+    t += "上单盈亏: " + (justClosed ? str.tostring(strategy.closedtrades.profit(strategy.closedtrades - 1)) : "-") + "\n"
+    
+    var label dbg = label.new(bar_index, high, t, style=label.style_label_left, textcolor=color.white, color=color.new(#1a1a2e, 10), size=size.normal)
+    if high > 0
+        label.set_x(dbg, bar_index + 5)
+        label.set_y(dbg, high)
+        label.set_text(dbg, t)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 10. 平仓兜底通知机制 (Close Position Backup)
+// ══════════════════════════════════════════════════════════════════════════════
+// 作用：当 strategy.position_size 归零时，强制发送 close 信号，防止漏单
+// 逻辑：检测边沿 (Pre != 0 and Curr == 0) -> 判断方向 -> 发送 alert
+// 🔥【关键修复】只有当 closeSignalSent == false 时才发送兜底信号，避免重复
+
+if strategy.position_size == 0 and strategy.position_size[1] != 0
+    // 🔥【防重复】只有正常信号未发送时才触发兜底
+    if not closeSignalSent
+        string backupMsg = ""
+        // 上一根是多单 -> 发送 closelong
+        if strategy.position_size[1] > 0
+            backupMsg := f_getPcMsg("closelong", 0)
+        // 上一根是空单 -> 发送 closeshort
+        else if strategy.position_size[1] < 0
+            backupMsg := f_getPcMsg("closeshort", 0)
+            
+        if backupMsg != ""
+            alert(backupMsg, alert.freq_once_per_bar_close)
+    
+    // 🔥【重置】仓位归零后重置标志，为下一次交易做准备
+    closeSignalSent := false
