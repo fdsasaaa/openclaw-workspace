@@ -1,0 +1,89 @@
+{
+  "version": "2.0",
+  "lastUpdated": "2026-03-11T10:30:00+08:00",
+  "updateReason": "完整优化恢复系统，支持永久性自动更新",
+  "changelog": [
+    {
+      "version": "2.0",
+      "date": "2026-03-11",
+      "changes": [
+        "创建 MASTER-RECOVERY-GUIDE.md（完整版恢复指南）",
+        "优化 FIRST-RUN.md（超简化版，新 OpenClaw 首次启动）",
+        "优化 RESTORE-COMMAND.md（自动执行协议）",
+        "创建 RECOVERY-VERSION.json（版本控制）",
+        "创建 update-recovery-system.ps1（自动更新脚本）",
+        "创建 one-click-restore.ps1（一键恢复脚本）",
+        "创建 verify-recovery.ps1（验证脚本）",
+        "支持永久性自动更新机制"
+      ],
+      "author": "虾哥 🦐",
+      "tested": true
+    },
+    {
+      "version": "1.0",
+      "date": "2026-03-07",
+      "changes": [
+        "创建 RECOVERY.md（恢复协议）",
+        "创建 RESTORE-COMMAND.md（恢复口令）",
+        "创建 FIRST-RUN.md（首次启动指令）",
+        "配置恢复口令机制",
+        "测试完整恢复流程"
+      ],
+      "author": "虾哥 🦐",
+      "tested": true
+    }
+  ],
+  "systemStatus": {
+    "recoverySystemHealthy": true,
+    "lastRecoveryTest": "2026-03-11T10:30:00+08:00",
+    "lastSuccessfulRecovery": "2026-03-11T10:30:00+08:00",
+    "coreFilesComplete": true,
+    "memoryFilesComplete": true,
+    "autoUpdateEnabled": true
+  },
+  "coreFiles": {
+    "required": [
+      "MASTER-RECOVERY-GUIDE.md",
+      "FIRST-RUN.md",
+      "RESTORE-COMMAND.md",
+      "RECOVERY.md",
+      "IDENTITY.md",
+      "SOUL.md",
+      "AGENTS.md",
+      "USER.md",
+      "TOOLS.md",
+      "HEARTBEAT.md",
+      "MEMORY.md",
+      "SYSTEM-STATE.json",
+      "RECOVERY-VERSION.json"
+    ],
+    "lastVerified": "2026-03-11T10:30:00+08:00",
+    "allPresent": true
+  },
+  "autoUpdate": {
+    "enabled": true,
+    "triggers": [
+      "核心文件变化",
+      "重要配置变更",
+      "新增重要能力",
+      "用户手动触发",
+      "每周自动检查"
+    ],
+    "lastAutoUpdate": "2026-03-11T10:30:00+08:00",
+    "nextScheduledCheck": "2026-03-18T10:30:00+08:00"
+  },
+  "gitBackup": {
+    "repository": "https://github.com/fdsasaaa/openclaw-workspace",
+    "lastBackup": "2026-03-11T08:32:00+08:00",
+    "autoBackupEnabled": true,
+    "backupSchedule": "每天凌晨 2:00"
+  },
+  "metadata": {
+    "user": "竹林（林大平）",
+    "userFeishuId": "ou_889dbc465c49c77583f2f0264e32a421",
+    "timezone": "Asia/Shanghai",
+    "workspace": "C:\\OpenClaw_Workspace\\workspace",
+    "agentName": "虾哥",
+    "agentEmoji": "🦐"
+  }
+}
