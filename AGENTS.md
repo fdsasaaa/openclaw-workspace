@@ -488,6 +488,45 @@ You are free to edit `HEARTBEAT.md` with a short checklist or reminders. Keep it
 
 **Tip:** Batch similar periodic checks into `HEARTBEAT.md` instead of creating multiple cron jobs. Use cron for precise schedules and standalone tasks.
 
+### 🎯 Cron 最佳实践（2026-03-11 学习）
+
+**Main vs Isolated 模式选择：**
+
+| 场景 | 推荐模式 | 原因 |
+|------|---------|------|
+| 简单提醒、需要用户互动 | Main | 依赖主会话上下文 |
+| 复杂任务、耗时操作、要求准点执行 | Isolated | 独立会话，不依赖心跳，到点就干 |
+| 自动化报告、监控告警 | Isolated | 确保准时执行，干完主动汇报 |
+
+**Main 模式的坑：**
+- 依赖心跳轮询（默认30分钟间隔）
+- 如果主会话不活跃，任务可能延迟或不执行
+- 仅适合"往主会话塞消息"的简单场景
+
+**Isolated 模式的优势：**
+- 独立开新会话，不依赖心跳
+- 到点就干，执行完主动汇报
+- 支持超时设置（`timeoutSeconds`），防止任务卡死
+
+**进阶技巧：**
+1. **合并任务** - 一次 Cron 解决多个需求（如晨报包含天气+日程+待办）
+2. **显式时区** - 所有 Cron 任务必须指定 `tz: "Asia/Shanghai"`，避免换环境翻车
+3. **成本优化** - 心跳用便宜模型，核心任务用好模型
+4. **错误防护** - Isolated 模式设置合理的 `timeoutSeconds`（如120-300秒）
+
+**Cron 表达式格式：**
+```
+秒 分 时 日 月 周
+0 19 * * *  → 每天19:00
+30 7 * * 1-5 → 工作日7:30
+0 */2 * * * → 每2小时
+```
+
+**调度类型：**
+- `at` - 一次性提醒（如"30分钟后提醒开会"）
+- `every` - 固定间隔执行（如"每小时检查服务器"）
+- `cron` - 复杂时间表达式（如"工作日早9点发日报"）
+
 **Things to check (rotate through these, 2-4 times per day):**
 
 - **Emails** - Any urgent unread messages?
