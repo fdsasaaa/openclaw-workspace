@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-03-12T14:00:36.201Z",
+  "tests": [
+    {
+      "name": "system-info",
+      "status": "passed",
+      "result": {
+        "WindowsVersion": "2009",
+        "TotalPhysicalMemory": null,
+        "CsProcessors": [
+          {
+            "Name": "13th Gen Intel(R) Core(TM) i7-13650HX",
+            "Manufacturer": "GenuineIntel",
+            "Description": "Intel64 Family 6 Model 183 Stepping 1",
+            "Architecture": 9,
+            "AddressWidth": 64,
+            "DataWidth": 64,
+            "MaxClockSpeed": 2600,
+            "CurrentClockSpeed": 2600,
+            "NumberOfCores": 14,
+            "NumberOfLogicalProcessors": 20,
+            "ProcessorID": "BFEBFBFF000B0671",
+            "SocketDesignation": "U3E1",
+            "ProcessorType": 3,
+            "Role": "CPU",
+            "Status": "OK",
+            "CpuStatus": 1,
+            "Availability": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "dir-list",
+      "status": "passed"
+    },
+    {
+      "name": "file-info",
+      "status": "passed"
+    },
+    {
+      "name": "image-info",
+      "status": "passed"
+    },
+    {
+      "name": "video-info",
+      "status": "info",
+      "message": "ffmpeg available"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 5
+  }
+}

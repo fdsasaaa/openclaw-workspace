@@ -1,0 +1,14 @@
+{
+  "total": 138,
+  "kept": 138,
+  "kept_wins": 89,
+  "kept_losses": 49,
+  "kept_win_rate": 64.4927536231884,
+  "rejected": 0,
+  "rejected_wins": 0,
+  "rejected_losses": 0,
+  "rejected_loss_rate": 0,
+  "accuracy": 64.4927536231884,
+  "false_rejection_rate": 0.0,
+  "false_keep_rate": 35.507246376811594
+}
